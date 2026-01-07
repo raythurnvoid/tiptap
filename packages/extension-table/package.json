@@ -14,58 +14,16 @@
   },
   "type": "module",
   "exports": {
-    ".": {
-      "types": {
-        "import": "./dist/index.d.ts",
-        "require": "./dist/index.d.cts"
-      },
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./table": {
-      "types": {
-        "import": "./dist/table/index.d.ts",
-        "require": "./dist/table/index.d.cts"
-      },
-      "import": "./dist/table/index.js",
-      "require": "./dist/table/index.cjs"
-    },
-    "./cell": {
-      "types": {
-        "import": "./dist/cell/index.d.ts",
-        "require": "./dist/cell/index.d.cts"
-      },
-      "import": "./dist/cell/index.js",
-      "require": "./dist/cell/index.cjs"
-    },
-    "./header": {
-      "types": {
-        "import": "./dist/header/index.d.ts",
-        "require": "./dist/header/index.d.cts"
-      },
-      "import": "./dist/header/index.js",
-      "require": "./dist/header/index.cjs"
-    },
-    "./kit": {
-      "types": {
-        "import": "./dist/kit/index.d.ts",
-        "require": "./dist/kit/index.d.cts"
-      },
-      "import": "./dist/kit/index.js",
-      "require": "./dist/kit/index.cjs"
-    },
-    "./row": {
-      "types": {
-        "import": "./dist/row/index.d.ts",
-        "require": "./dist/row/index.d.cts"
-      },
-      "import": "./dist/row/index.js",
-      "require": "./dist/row/index.cjs"
-    }
+    ".": "./src/index.ts",
+    "./table": "./src/table/index.ts",
+    "./cell": "./src/cell/index.ts",
+    "./header": "./src/header/index.ts",
+    "./kit": "./src/kit/index.ts",
+    "./row": "./src/row/index.ts"
   },
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
   "files": [
     "src",
     "dist"

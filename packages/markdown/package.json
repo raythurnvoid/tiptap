@@ -13,21 +13,11 @@
     "url": "https://github.com/sponsors/ueberdosis"
   },
   "exports": {
-    ".": {
-      "types": {
-        "import": "./dist/index.d.ts",
-        "require": "./dist/index.d.cts"
-      },
-      "import": {
-        "browser": "./dist/index.js",
-        "default": "./dist/index.js"
-      },
-      "require": "./dist/index.cjs"
-    }
+    ".": "./src/index.ts"
   },
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
   "type": "module",
   "files": [
     "src",

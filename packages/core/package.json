@@ -17,34 +17,13 @@
   },
   "type": "module",
   "exports": {
-    ".": {
-      "types": {
-        "import": "./dist/index.d.ts",
-        "require": "./dist/index.d.cts"
-      },
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./jsx-runtime": {
-      "types": {
-        "import": "./jsx-runtime/index.d.ts",
-        "require": "./jsx-runtime/index.d.cts"
-      },
-      "import": "./jsx-runtime/index.js",
-      "require": "./jsx-runtime/index.cjs"
-    },
-    "./jsx-dev-runtime": {
-      "types": {
-        "import": "./jsx-dev-runtime/index.d.ts",
-        "require": "./jsx-dev-runtime/index.d.cts"
-      },
-      "import": "./jsx-dev-runtime/index.js",
-      "require": "./jsx-dev-runtime/index.cjs"
-    }
+    ".": "./src/index.ts",
+    "./jsx-runtime": "./src/jsx-runtime.ts",
+    "./jsx-dev-runtime": "./src/jsx-runtime.ts"
   },
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
   "files": [
     "src",
     "dist",

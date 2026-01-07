@@ -13,30 +13,12 @@
     "url": "https://github.com/sponsors/ueberdosis"
   },
   "exports": {
-    ".": {
-      "types": {
-        "import": "./dist/index.d.ts",
-        "require": "./dist/index.d.cts"
-      },
-      "import": {
-        "browser": "./dist/index.js",
-        "node": "./dist/server/index.js",
-        "default": "./dist/index.js"
-      },
-      "require": "./dist/index.cjs"
-    },
-    "./server": {
-      "types": {
-        "import": "./dist/server/index.d.ts",
-        "require": "./dist/server/index.d.cts"
-      },
-      "import": "./dist/server/index.js",
-      "require": "./dist/server/index.cjs"
-    }
+    ".": "./src/index.ts",
+    "./server": "./src/server/index.ts"
   },
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
   "type": "module",
   "files": [
     "src",
@@ -45,12 +27,12 @@
   "devDependencies": {
     "@tiptap/core": "workspace:^",
     "@tiptap/pm": "workspace:^",
-    "happy-dom": "^20.0.2"
+    "linkedom": "^0.18.12"
   },
   "peerDependencies": {
     "@tiptap/core": "workspace:^",
     "@tiptap/pm": "workspace:^",
-    "happy-dom": "^20.0.2"
+    "linkedom": "^0.18.12"
   },
   "repository": {
     "type": "git",

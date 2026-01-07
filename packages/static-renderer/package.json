@@ -15,58 +15,16 @@
   },
   "type": "module",
   "exports": {
-    ".": {
-      "types": {
-        "import": "./dist/index.d.ts",
-        "require": "./dist/index.d.cts"
-      },
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./json/react": {
-      "types": {
-        "import": "./dist/json/react/index.d.ts",
-        "require": "./dist/json/react/index.d.cts"
-      },
-      "import": "./dist/json/react/index.js",
-      "require": "./dist/json/react/index.cjs"
-    },
-    "./json/html-string": {
-      "types": {
-        "import": "./dist/json/html-string/index.d.ts",
-        "require": "./dist/json/html-string/index.d.cts"
-      },
-      "import": "./dist/json/html-string/index.js",
-      "require": "./dist/json/html-string/index.cjs"
-    },
-    "./pm/react": {
-      "types": {
-        "import": "./dist/pm/react/index.d.ts",
-        "require": "./dist/pm/react/index.d.cts"
-      },
-      "import": "./dist/pm/react/index.js",
-      "require": "./dist/pm/react/index.cjs"
-    },
-    "./pm/html-string": {
-      "types": {
-        "import": "./dist/pm/html-string/index.d.ts",
-        "require": "./dist/pm/html-string/index.d.cts"
-      },
-      "import": "./dist/pm/html-string/index.js",
-      "require": "./dist/pm/html-string/index.cjs"
-    },
-    "./pm/markdown": {
-      "types": {
-        "import": "./dist/pm/markdown/index.d.ts",
-        "require": "./dist/pm/markdown/index.d.cts"
-      },
-      "import": "./dist/pm/markdown/index.js",
-      "require": "./dist/pm/markdown/index.cjs"
-    }
+    ".": "./src/index.ts",
+    "./json/react": "./src/json/react/index.ts",
+    "./json/html-string": "./src/json/html-string/index.ts",
+    "./pm/react": "./src/pm/react/index.ts",
+    "./pm/html-string": "./src/pm/html-string/index.ts",
+    "./pm/markdown": "./src/pm/markdown/index.ts"
   },
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
   "files": [
     "src",
     "dist"

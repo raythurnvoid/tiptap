@@ -1,11 +1,11 @@
 import type { Node, Schema } from '@tiptap/pm/model'
 import { DOMSerializer } from '@tiptap/pm/model'
-import { Window } from 'happy-dom'
+import { parseHTML } from 'linkedom/worker'
 
 /**
  * Returns the HTML string representation of a given document node.
  *
- * @remarks **Important**: This function requires `happy-dom` to be installed in your project.
+ * @remarks **Important**: This function requires `linkedom` to be installed in your project.
  * @param doc - The document node to serialize.
  * @param schema - The Prosemirror schema to use for serialization.
  * @returns A promise containing the HTML string representation of the document fragment.
@@ -23,21 +23,11 @@ export function getHTMLFromFragment(doc: Node, schema: Schema, options?: { docum
     return wrap.innerHTML
   }
 
-  const localWindow = new Window()
-  let result: string
+  const { document } = parseHTML('<!DOCTYPE html><html><body></body></html>')
+  const fragment = DOMSerializer.fromSchema(schema).serializeFragment(doc.content, {
+    document: document as unknown as Document,
+  })
 
-  try {
-    const fragment = DOMSerializer.fromSchema(schema).serializeFragment(doc.content, {
-      document: localWindow.document as unknown as Document,
-    })
-
-    const serializer = new localWindow.XMLSerializer()
-    result = serializer.serializeToString(fragment as any)
-  } finally {
-    // clean up happy-dom to avoid memory leaks
-    localWindow.happyDOM.abort()
-    localWindow.happyDOM.close()
-  }
-
-  return result
+  // linkedom nodes implement a stringifier that returns HTML
+  return fragment.toString()
 }

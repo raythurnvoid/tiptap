@@ -42,6 +42,9 @@
   "scripts": {
     "build": "vp pack"
   },
+  "dependencies": {
+    "linkedom": "^0.18.12"
+  },
   "devDependencies": {
     "@tiptap/pm": "workspace:^",
     "prosemirror-model": "^1.25.12",

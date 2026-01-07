@@ -1,3 +1,5 @@
+import { DOMParser as LinkedomDOMParser } from 'linkedom/worker'
+
 const removeWhitespaces = (node: HTMLElement) => {
   const children = node.childNodes
 
@@ -15,15 +17,12 @@ const removeWhitespaces = (node: HTMLElement) => {
 }
 
 export function elementFromString(value: string): HTMLElement {
-  if (typeof window === 'undefined') {
-    throw new Error(
-      '[tiptap error]: there is no window object available, so this function cannot be used',
-    )
-  }
+  // Workers have no platform DOMParser.
+  const domParser = typeof DOMParser === 'undefined' ? new LinkedomDOMParser() : new DOMParser()
   // add a wrapper to preserve leading and trailing whitespace
   const wrappedValue = `<body>${value}</body>`
 
-  const html = new window.DOMParser().parseFromString(wrappedValue, 'text/html').body
+  const html = domParser.parseFromString(wrappedValue, 'text/html').body
 
-  return removeWhitespaces(html)
+  return removeWhitespaces(html as unknown as HTMLElement)
 }

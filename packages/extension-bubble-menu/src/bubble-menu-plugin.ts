@@ -560,6 +560,20 @@ export class BubbleMenuView implements PluginView {
     return shouldShow || false
   }
 
+  reevaluateVisibility() {
+    if (this.editor.isDestroyed || this.view.composing) {
+      return
+    }
+
+    if (!this.getShouldShow()) {
+      this.hide()
+      return
+    }
+
+    this.show()
+    this.updatePosition()
+  }
+
   updateHandler = (
     view: EditorView,
     selectionChanged: boolean,
@@ -632,6 +646,8 @@ export class BubbleMenuView implements PluginView {
     const meta = tr.getMeta(this.pluginKey)
     if (meta === 'updatePosition') {
       this.updatePosition()
+    } else if (meta === 'reevaluate') {
+      this.reevaluateVisibility()
     } else if (meta && typeof meta === 'object' && meta.type === 'updateOptions') {
       this.updateOptions(meta.options)
     } else if (meta === 'hide') {
@@ -699,6 +715,14 @@ export class BubbleMenuView implements PluginView {
       this.floatingUIOptions.onDestroy()
     }
   }
+}
+
+export function bubbleMenuReevaluateVisibility(editor: Editor, pluginKey: string | PluginKey = 'bubbleMenu') {
+  if (editor.isDestroyed) {
+    return
+  }
+
+  editor.view.dispatch(editor.state.tr.setMeta(pluginKey, 'reevaluate'))
 }
 
 export const BubbleMenuPlugin = (options: BubbleMenuPluginProps) => {

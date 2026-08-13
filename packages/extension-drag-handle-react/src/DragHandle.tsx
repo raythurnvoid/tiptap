@@ -7,7 +7,8 @@ import {
 import type { Node } from '@tiptap/pm/model'
 import type { Plugin } from '@tiptap/pm/state'
 import type { Editor } from '@tiptap/react'
-import { type ReactNode, useEffect, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>
 
@@ -28,20 +29,30 @@ export const DragHandle = (props: DragHandleProps) => {
     onElementDragEnd,
     computePositionConfig = defaultComputePositionConfig,
   } = props
-  const [element, setElement] = useState<HTMLDivElement | null>(null)
+  // The plugin moves this element into a wrapper of its own inside the editor DOM. If React
+  // rendered the element, React would still expect it under the parent node it rendered it in.
+  // Removing this component then fails with "removeChild: the node to be removed is not a child
+  // of this node" and the whole editor crashes. So the element is created here, outside the React
+  // tree, and only its children are rendered into it. BubbleMenu does the same.
+  const elementRef = useRef<HTMLDivElement | null>(null)
+  if (!elementRef.current) {
+    elementRef.current = document.createElement('div')
+    elementRef.current.style.visibility = 'hidden'
+    elementRef.current.style.position = 'absolute'
+  }
+  const element = elementRef.current
+
   const plugin = useRef<Plugin | null>(null)
+
+  useEffect(() => {
+    element.className = className
+  }, [className, element])
 
   useEffect(() => {
     let initPlugin: {
       plugin: Plugin
       unbind: () => void
     } | null = null
-
-    if (!element) {
-      return () => {
-        plugin.current = null
-      }
-    }
 
     if (editor.isDestroyed) {
       return () => {
@@ -77,9 +88,5 @@ export const DragHandle = (props: DragHandleProps) => {
     }
   }, [element, editor, onNodeChange, pluginKey, computePositionConfig, onElementDragStart, onElementDragEnd])
 
-  return (
-    <div className={className} style={{ visibility: 'hidden', position: 'absolute' }} ref={setElement}>
-      {children}
-    </div>
-  )
+  return createPortal(children, element)
 }

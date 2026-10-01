@@ -204,10 +204,30 @@ export class MarkdownManager {
     return new this.markedInstance.Lexer(this.markedInstance.defaults)
   }
 
-  private createTokenizerHelpers(lexer: Lexer): MarkdownLexerConfiguration {
+  private createTokenizerHelpers(lexer: Lexer, level: 'block' | 'inline'): MarkdownLexerConfiguration {
+    if (level === 'inline') {
+      return {
+        inlineTokens: (src: string) => lexer.inlineTokens(src),
+        blockTokens: (src: string) => lexer.blockTokens(src),
+      }
+    }
+
     return {
-      inlineTokens: (src: string) => lexer.inlineTokens(src),
-      blockTokens: (src: string) => lexer.blockTokens(src),
+      inlineTokens: (src: string) => {
+        // A block's open link must not affect later paragraphs.
+        const { inLink } = lexer.state
+        const tokens = lexer.inlineTokens(src)
+        lexer.state.inLink = inLink
+        return tokens
+      },
+      blockTokens: (src: string) => {
+        // Nested blocks need paragraphs, like Marked's blockquote tokenizer.
+        const { top } = lexer.state
+        lexer.state.top = true
+        const tokens = lexer.blockTokens(src)
+        lexer.state.top = top
+        return tokens
+      },
     }
   }
 
@@ -232,7 +252,7 @@ export class MarkdownManager {
     if (!start) {
       startCb = (src: string) => {
         // For other tokenizers, try to find a match and return its position
-        const result = tokenize(src, [], this.createTokenizerHelpers(this.createLexer()))
+        const result = tokenize(src, [], this.createTokenizerHelpers(this.createLexer(), level))
         if (result && result.raw) {
           const index = src.indexOf(result.raw)
           return index
@@ -249,9 +269,7 @@ export class MarkdownManager {
       level,
       start: startCb,
       tokenizer(this: TokenizerThis, src, tokens) {
-        const helper = this.lexer
-          ? createTokenizerHelpers(this.lexer)
-          : createTokenizerHelpers(createLexer())
+        const helper = createTokenizerHelpers(this.lexer ?? createLexer(), level)
         const result = tokenize(src, tokens, helper)
 
         if (result && result.type) {

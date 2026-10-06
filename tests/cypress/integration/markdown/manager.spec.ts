@@ -8,6 +8,7 @@ import { Link } from '@tiptap/extension-link'
 import { BulletList, ListItem, OrderedList, TaskItem, TaskList } from '@tiptap/extension-list'
 import { Mention } from '@tiptap/extension-mention'
 import { Paragraph } from '@tiptap/extension-paragraph'
+import { Strike } from '@tiptap/extension-strike'
 import { Text } from '@tiptap/extension-text'
 import { Youtube } from '@tiptap/extension-youtube'
 import { MarkdownManager } from '@tiptap/markdown'
@@ -61,7 +62,19 @@ describe('MarkdownManager Direct Tests', () => {
 
   beforeEach(() => {
     // Basic extensions for standard markdown
-    basicExtensions = [Document, Paragraph, Text, Heading, Bold, Italic, Link, BulletList, OrderedList, ListItem]
+    basicExtensions = [
+      Document,
+      Paragraph,
+      Text,
+      Heading,
+      Bold,
+      Italic,
+      Strike,
+      Link,
+      BulletList,
+      OrderedList,
+      ListItem,
+    ]
 
     // Extended extensions with custom markdown features
     extendedExtensions = [
@@ -218,6 +231,40 @@ Final paragraph.`
 
       const markdown = markdownManager.renderNodes(doc)
       expect(markdown).to.equal('# Main Title\n\n## Subtitle')
+    })
+    const emphasisCases = [
+      { type: 'bold', marker: '**' },
+      { type: 'italic', marker: '*' },
+      { type: 'strike', marker: '~~' },
+    ]
+
+    emphasisCases.forEach(({ type, marker }) => {
+      it(`keeps spaces outside ${type} beside an inline atom`, () => {
+        const doc = {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [
+                { type: 'text', text: 'Before ', marks: [{ type }] },
+                { type: 'tag', attrs: { label: 'note' } },
+                { type: 'text', text: ' after', marks: [{ type }] },
+              ],
+            },
+          ],
+        }
+        const markdown = markdownManager.renderNodes(doc)
+        expect(markdown).to.equal(`${marker}Before${marker} [tag label="note"] ${marker}after${marker}`)
+        const restored = markdownManager.parse(markdown).content[0].content
+        expect(restored[0].marks[0].type).to.equal(type)
+        expect(restored[0].text).to.equal('Before')
+        expect(restored[restored.length - 1].marks[0].type).to.equal(type)
+        expect(restored[restored.length - 1].text).to.equal('after')
+      })
+    })
+
+    it('keeps a space-only emphasis node plain', () => {
+      expect(markdownManager.renderNodes([{ type: 'text', text: ' ', marks: [{ type: 'bold' }] }])).to.equal(' ')
     })
 
     it('should render mentions', () => {

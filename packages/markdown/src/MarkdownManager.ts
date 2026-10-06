@@ -638,6 +638,32 @@ export class MarkdownManager {
     separator = '',
     level = 0,
   ): string {
+    // CommonMark requires non-space text beside emphasis markers. Keep edge spaces outside each run.
+    nodes = nodes.flatMap((node, i) => {
+      const emphasis = node.marks?.filter(mark => ['bold', 'italic', 'strike'].includes(mark.type))
+      if (node.type !== 'text' || !node.text || !emphasis?.length) {
+        return [node]
+      }
+
+      const previous = nodes[i - 1]
+      const next = nodes[i + 1]
+      const opens = emphasis.some(mark => previous?.type !== 'text' || !previous.marks?.some(m => m.type === mark.type))
+      const closes = emphasis.some(mark => next?.type !== 'text' || !next.marks?.some(m => m.type === mark.type))
+      const leading = opens ? node.text.match(/^\s+/)?.[0] || '' : ''
+      const rest = node.text.slice(leading.length)
+      const trailing = closes ? rest.match(/\s+$/)?.[0] || '' : ''
+      if (!leading && !trailing) {
+        return [node]
+      }
+
+      const text = rest.slice(0, rest.length - trailing.length)
+      const parts: JSONContent[] = []
+      if (leading) parts.push({ type: 'text', text: leading })
+      if (text) parts.push({ ...node, text })
+      if (trailing) parts.push({ type: 'text', text: trailing })
+      return parts
+    })
+
     const result: string[] = []
     const activeMarks: Map<string, any> = new Map()
 

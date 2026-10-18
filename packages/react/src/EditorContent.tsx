@@ -164,11 +164,10 @@ export class PureEditorContent extends React.Component<
 
     this.initialized = false
 
-    if (!editor.isDestroyed) {
-      editor.view.setProps({
-        nodeViews: {},
-      })
-    }
+    // Do not reset `nodeViews` here. The reset made ProseMirror draw the whole document again, and
+    // most unmounts destroy the editor right after, so a large document paid that draw for nothing.
+    // Without `contentComponent`, React node views skip their React render. A new `EditorContent`
+    // for this editor builds fresh node views in `init()` through `createNodeViews()`.
 
     if (this.unsubscribeToContentComponent) {
       this.unsubscribeToContentComponent()

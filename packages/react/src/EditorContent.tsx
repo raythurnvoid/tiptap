@@ -170,10 +170,9 @@ export class PureEditorContent extends React.Component<
 
     if (!editor.isDestroyed) {
       editor.unregisterPlugin(mobileEnterPluginKey)
-      editor.view.setProps({
-        nodeViews: {},
-      })
     }
+
+    // Avoid redrawing node views during unmount. init() rebuilds them on the next mount.
 
     editor.contentComponent = null
 

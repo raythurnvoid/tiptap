@@ -5,7 +5,7 @@ import Text from '@tiptap/extension-text'
 import { PluginKey } from '@tiptap/pm/state'
 import { describe, expect, it, vi } from 'vite-plus/test'
 
-import { BubbleMenuView } from './bubble-menu-plugin.js'
+import { bubbleMenuReevaluateVisibility, BubbleMenuView } from './bubble-menu-plugin.js'
 
 const { computePositionMock } = vi.hoisted(() => ({
   computePositionMock: vi.fn(),
@@ -47,6 +47,45 @@ function createBubbleMenuView(
 }
 
 describe('BubbleMenuView cross-contamination', () => {
+  it('reevaluates its visibility without a selection or document change', async () => {
+    const editor = createEditor()
+    let visible = false
+    const view = createBubbleMenuView(editor, {
+      pluginKey: 'selectionMenu',
+      appendTo: document.body,
+      shouldShow: () => visible,
+      getReferencedVirtualElement: () => virtualElement,
+    })
+    const otherView = createBubbleMenuView(editor)
+    computePositionMock.mockResolvedValue({
+      x: 10,
+      y: 20,
+      strategy: 'absolute',
+      placement: 'top',
+      middlewareData: {},
+    })
+    const originalDoc = editor.state.doc
+    const originalSelection = editor.state.selection
+
+    visible = true
+    bubbleMenuReevaluateVisibility(editor, 'selectionMenu')
+    await Promise.resolve()
+    expect(view.element.style.visibility).toBe('visible')
+    expect(view.element.style.left).toBe('10px')
+    expect(otherView.isVisible).toBe(false)
+
+    visible = false
+    bubbleMenuReevaluateVisibility(editor, 'selectionMenu')
+    expect(view.element.style.visibility).toBe('hidden')
+    expect(editor.state.doc).toBe(originalDoc)
+    expect(editor.state.selection.eq(originalSelection)).toBe(true)
+
+    view.destroy()
+    otherView.destroy()
+    editor.destroy()
+    computePositionMock.mockReset()
+  })
+
   it('should only process updateOptions for its own pluginKey (string)', () => {
     const editor = createEditor()
 

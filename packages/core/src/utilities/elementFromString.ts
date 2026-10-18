@@ -20,7 +20,7 @@ export function elementFromString(value: string): HTMLElement {
   // Workers have no platform DOMParser.
   const domParser = typeof DOMParser === 'undefined' ? new LinkedomDOMParser() : new DOMParser()
   // add a wrapper to preserve leading and trailing whitespace
-  const wrappedValue = `<body>${value}</body>`
+  const wrappedValue = `<!DOCTYPE html><html><body>${value}</body></html>`
 
   const html = domParser.parseFromString(wrappedValue, 'text/html').body
 

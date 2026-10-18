@@ -260,6 +260,25 @@ Second paragraph.`
       ])
     })
 
+    it('keeps an open link in a block tokenizer out of later paragraphs', () => {
+      const manager = new MarkdownManager({ extensions: [...basicExtensions, TestProbe] })
+      const doc = manager.parse(':::probe <a href="/probe">Probe :::\n\nhttps://example.com')
+
+      expect(doc.content!.at(-1)!.content![0].marks).toEqual([
+        { type: 'link', attrs: { href: 'https://example.com', title: null } },
+      ])
+    })
+
+    it('keeps nested ordered-list continuations in a paragraph', () => {
+      const marked = new Marked()
+      new MarkdownManager({
+        marked,
+        extensions: basicExtensions,
+      })
+
+      expect(marked.parse('- outer\n  1. first\n\n     continued')).toContain('<p>continued</p>')
+    })
+
     it('runs custom tokenizers registered on an injected Marked instance', () => {
       // Regression: custom tokenizers must still fire when a dedicated `marked`
       // instance is injected, not only on the default shared instance.
@@ -687,6 +706,37 @@ Final paragraph.`
 
       const markdown = markdownManager.renderNodes(doc)
       expect(markdown).toBe('# Main Title\n\n## Subtitle')
+    })
+
+    it.each([
+      { type: 'bold', marker: '**' },
+      { type: 'italic', marker: '*' },
+      { type: 'strike', marker: '~~' },
+    ])('keeps spaces outside $type beside an inline atom', ({ type, marker }) => {
+      const doc = {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [
+              { type: 'text', text: 'Before ', marks: [{ type }] },
+              { type: 'tag', attrs: { label: 'note' }, marks: [{ type }] },
+              { type: 'text', text: ' after', marks: [{ type }] },
+            ],
+          },
+        ],
+      }
+      const markdown = markdownManager.renderNodes(doc)
+      expect(markdown).toBe(`${marker}Before${marker} [tag label="note"] ${marker}after${marker}`)
+      const restored = markdownManager.parse(markdown).content![0].content!
+      expect(restored[0]).toMatchObject({ text: 'Before', marks: [{ type }] })
+      expect(restored.at(-1)).toMatchObject({ text: 'after', marks: [{ type }] })
+    })
+
+    it('keeps a space-only emphasis node plain', () => {
+      expect(
+        markdownManager.renderNodes([{ type: 'text', text: ' ', marks: [{ type: 'bold' }] }]),
+      ).toBe(' ')
     })
 
     it('should render mentions', () => {

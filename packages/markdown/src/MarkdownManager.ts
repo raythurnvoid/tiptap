@@ -204,7 +204,10 @@ export class MarkdownManager {
     return new this.markedInstance.Lexer(this.markedInstance.defaults)
   }
 
-  private createTokenizerHelpers(lexer: Lexer, level: 'block' | 'inline'): MarkdownLexerConfiguration {
+  private createTokenizerHelpers(
+    lexer: Lexer,
+    level: 'block' | 'inline',
+  ): MarkdownLexerConfiguration {
     if (level === 'inline') {
       return {
         inlineTokens: (src: string) => lexer.inlineTokens(src),
@@ -1299,8 +1302,9 @@ export class MarkdownManager {
     // Delimiters can depend on the whole mark run, not just one text node
     const markSpanTexts = collectMarkSpanTexts(nodes)
     nodes.forEach((node, i) => {
-      // Lookahead to the next node to determine if marks need to be closed
-      const nextNode = i < nodes.length - 1 ? nodes[i + 1] : null
+      // Atoms render outside text marks, even when they carry the same mark.
+      // Close here so edge spaces stay outside the delimiters.
+      const nextNode = nodes[i + 1]?.type === 'text' ? nodes[i + 1] : null
 
       if (!node.type) {
         return

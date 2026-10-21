@@ -137,7 +137,7 @@ export function collectOrderedListItems(lines: string[]): [OrderedListItem[], nu
       break
     }
 
-    const [, indent, marker, separator, content] = match
+    const [, indent, marker, _separator, content] = match
     const indentLevel = indent.length
     const number = parseInt(marker, 10)
 
@@ -148,6 +148,9 @@ export function collectOrderedListItems(lines: string[]): [OrderedListItem[], nu
     let nextLineIndex = currentLineIndex + 1
     const itemLines = [line]
     let sawBlankLine = false
+    // Indexes in `itemContentLines` of the indented lines, cut below once the whole item is read.
+    const indentedLineIndexes: number[] = []
+    let smallestIndent = Infinity
 
     // Collect continuation lines for this item (but NOT nested list items)
     while (nextLineIndex < lines.length) {
@@ -168,13 +171,10 @@ export function collectOrderedListItems(lines: string[]): [OrderedListItem[], nu
         nextLineIndex += 1
       } else if (nextLine.match(INDENTED_LINE_REGEX)) {
         // Indented content - part of this item (but not a list item).
-        // Strip the indentation only up to the whitespace that is actually present,
-        // so an under-indented line (e.g. a single leading space) keeps its first character.
-        const leadingWhitespace = nextLine.length - nextLine.trimStart().length
-        // The content starts after the marker, its `.` or `)`, and one space: 3 columns for `1. `.
-        const contentIndent = indentLevel + marker.length + separator.length + 1
         itemLines.push(nextLine)
-        itemContentLines.push(nextLine.slice(Math.min(leadingWhitespace, contentIndent)))
+        indentedLineIndexes.push(itemContentLines.length)
+        itemContentLines.push(nextLine)
+        smallestIndent = Math.min(smallestIndent, nextLine.length - nextLine.trimStart().length)
         nextLineIndex += 1
       } else {
         if (sawBlankLine || interruptsLazyContinuation(nextLine)) {
@@ -185,6 +185,14 @@ export function collectOrderedListItems(lines: string[]): [OrderedListItem[], nu
         itemContentLines.push(nextLine)
         nextLineIndex += 1
       }
+    }
+
+    // Cut every indented line by the same width, so lines keep their indent relative to each other:
+    // a bullet nested with 2 spaces stays nested. The width is where the item's text starts (3
+    // columns for `1. `), or less when the item's lines are indented less than that.
+    const cut = Math.min(smallestIndent, line.length - content.length)
+    for (const index of indentedLineIndexes) {
+      itemContentLines[index] = itemContentLines[index].slice(cut)
     }
 
     listItems.push({

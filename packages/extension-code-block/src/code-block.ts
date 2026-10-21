@@ -180,12 +180,18 @@ export const CodeBlock = Node.create<CodeBlockOptions>({
 
   renderMarkdown: (node, h) => {
     let output = ''
-    const language = node.attrs?.language || ''
+    // A backtick in the info string makes the opening line plain text, not a fence.
+    const language = node.attrs?.language?.includes('`') ? '' : node.attrs?.language || ''
+    const code = node.content ? h.renderChildren(node.content) : ''
+    // The fence must be longer than any backtick run in the code. Otherwise a ``` line in the code
+    // closes the block early, and the rest of the code turns into Markdown.
+    const longestRun = Math.max(0, ...(code.match(/`+/g) ?? []).map(run => run.length))
+    const fence = '`'.repeat(Math.max(3, longestRun + 1))
 
     if (!node.content) {
-      output = `\`\`\`${language}\n\n\`\`\``
+      output = `${fence}${language}\n\n${fence}`
     } else {
-      const lines = [`\`\`\`${language}`, h.renderChildren(node.content), '```']
+      const lines = [`${fence}${language}`, code, fence]
       output = lines.join('\n')
     }
 

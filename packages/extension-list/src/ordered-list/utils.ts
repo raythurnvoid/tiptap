@@ -137,7 +137,7 @@ export function collectOrderedListItems(lines: string[]): [OrderedListItem[], nu
       break
     }
 
-    const [, indent, marker, _separator, content] = match
+    const [, indent, marker, separator, content] = match
     const indentLevel = indent.length
     const number = parseInt(marker, 10)
 
@@ -171,7 +171,8 @@ export function collectOrderedListItems(lines: string[]): [OrderedListItem[], nu
         // Strip the indentation only up to the whitespace that is actually present,
         // so an under-indented line (e.g. a single leading space) keeps its first character.
         const leadingWhitespace = nextLine.length - nextLine.trimStart().length
-        const contentIndent = indentLevel + marker.length + 1
+        // The content starts after the marker, its `.` or `)`, and one space: 3 columns for `1. `.
+        const contentIndent = indentLevel + marker.length + separator.length + 1
         itemLines.push(nextLine)
         itemContentLines.push(nextLine.slice(Math.min(leadingWhitespace, contentIndent)))
         nextLineIndex += 1

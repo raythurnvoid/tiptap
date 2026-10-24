@@ -1,4 +1,11 @@
-import { Mark, markInputRule, markPasteRule, mergeAttributes } from '@tiptap/core'
+import {
+  getMarkDelimiters,
+  Mark,
+  markdownSyntaxAttribute,
+  markInputRule,
+  markPasteRule,
+  mergeAttributes,
+} from '@tiptap/core'
 
 export interface StrikeOptions {
   /**
@@ -54,6 +61,12 @@ export const Strike = Mark.create<StrikeOptions>({
     }
   },
 
+  addAttributes() {
+    return {
+      markdownSyntax: markdownSyntaxAttribute(),
+    }
+  },
+
   parseHTML() {
     return [
       {
@@ -81,11 +94,17 @@ export const Strike = Mark.create<StrikeOptions>({
 
   parseMarkdown: (token, helpers) => {
     // Convert 'del' token to strike mark
-    return helpers.applyMark('strike', helpers.parseInline(token.tokens || []))
+    const markdownSyntax = token.raw?.startsWith('~') && !token.raw.startsWith('~~') ? '~' : null
+    return helpers.applyMark(
+      'strike',
+      helpers.parseInline(token.tokens || []),
+      markdownSyntax ? { markdownSyntax } : undefined,
+    )
   },
 
-  renderMarkdown: (node, h) => {
-    return `~~${h.renderChildren(node)}~~`
+  renderMarkdown: (node, h, context) => {
+    const { open, close } = getMarkDelimiters(node.attrs?.markdownSyntax, '~~', context?.meta)
+    return `${open}${h.renderChildren(node)}${close}`
   },
 
   addCommands() {

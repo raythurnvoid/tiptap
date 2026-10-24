@@ -1,5 +1,12 @@
 import type { InputRuleMatch, PasteRuleMatch } from '@tiptap/core'
-import { Mark, markInputRule, markPasteRule, mergeAttributes } from '@tiptap/core'
+import {
+  getMarkDelimiters,
+  Mark,
+  markdownSyntaxAttribute,
+  markInputRule,
+  markPasteRule,
+  mergeAttributes,
+} from '@tiptap/core'
 
 export interface CodeOptions {
   /**
@@ -105,6 +112,11 @@ function shortestUnusedBacktickRun(text: string): number {
   return length
 }
 
+// Markdown still reads the text inside an HTML tag, so only plain text can keep a `<code>` tag
+function codeTagFits(text: string): boolean {
+  return /^[\p{L}\p{N}\s.,;:()+\-'"?#%/]*$/u.test(text) && !/:\/\/|www\./i.test(text)
+}
+
 /**
  * This extension allows you to mark text as inline code.
  * @see https://tiptap.dev/api/marks/code
@@ -123,6 +135,12 @@ export const Code = Mark.create<CodeOptions>({
   code: true,
 
   exitable: true,
+
+  addAttributes() {
+    return {
+      markdownSyntax: markdownSyntaxAttribute(),
+    }
+  },
 
   parseHTML() {
     return [{ tag: 'code' }]
@@ -147,6 +165,13 @@ export const Code = Mark.create<CodeOptions>({
 
     // Children are a placeholder here, so the fence comes from the full span text
     const markText = typeof context?.meta?.markText === 'string' ? context.meta.markText : ''
+    const tag = codeTagFits(markText)
+      ? getMarkDelimiters(node.attrs?.markdownSyntax, '', context?.meta)
+      : null
+    if (tag?.open) {
+      return `${tag.open}${h.renderChildren(node.content)}${tag.close}`
+    }
+
     const fence = '`'.repeat(shortestUnusedBacktickRun(markText))
     // CommonMark strips one space on each side, so padding keeps backticks apart
     const padding = markText.startsWith('`') || markText.endsWith('`') ? ' ' : ''

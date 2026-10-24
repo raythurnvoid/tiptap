@@ -1184,7 +1184,21 @@ export class MarkdownManager {
     }
 
     const escaped = this.escapeMarkdownSyntax(encodeHtmlEntities(text))
-    return parentNode?.type === 'paragraph' ? this.escapeBlockStarts(escaped, atLineStart) : escaped
+    return parentNode?.type === 'paragraph' || this.isUnderlinedHeading(parentNode)
+      ? this.escapeBlockStarts(escaped, atLineStart)
+      : escaped
+  }
+
+  /**
+   * A level 1 or 2 heading with a line break in its text is written with an
+   * underline, so its lines start like paragraph lines.
+   */
+  private isUnderlinedHeading(node?: JSONContent): boolean {
+    return (
+      node?.type === 'heading' &&
+      Number(node.attrs?.level ?? 1) <= 2 &&
+      (node.content || []).some(child => child.text?.includes('\n'))
+    )
   }
 
   /**

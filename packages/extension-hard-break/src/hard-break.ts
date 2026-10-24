@@ -64,7 +64,8 @@ export const HardBreak = Node.create<HardBreakOptions>({
     return '\n'
   },
 
-  renderMarkdown: () => `  \n`,
+  // A `#` heading is one line, so a break inside it must be a tag
+  renderMarkdown: (_node, _helpers, context) => (context.parentType === 'heading' ? '<br>' : `  \n`),
 
   parseMarkdown: () => {
     return {

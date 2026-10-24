@@ -102,7 +102,17 @@ export const Heading = Node.create<HeadingOptions>({
     }
 
     // Use current context for proper joining/spacing
-    return `${headingChars} ${h.renderChildren(node.content)}`
+    const content = h.renderChildren(node.content)
+    if (!content.includes('\n')) {
+      return `${headingChars} ${content}`
+    }
+
+    // A `#` heading is one line. Only levels 1 and 2 have the underlined form that can hold more lines.
+    if (level <= 2) {
+      return `${content}\n${level === 1 ? '===' : '---'}`
+    }
+
+    return `${headingChars} ${content.replace(/\n/g, ' ')}`
   },
 
   addCommands() {

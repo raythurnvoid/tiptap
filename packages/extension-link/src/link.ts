@@ -212,6 +212,15 @@ export function isAllowedUri(uri: string | undefined, protocols?: LinkOptions['p
   )
 }
 
+// An edited link text no longer reads back as the same link
+function isAutolinkText(text: string, href: string) {
+  return (
+    href === text ||
+    href === `mailto:${text}` ||
+    (text.startsWith('www.') && href === `http://${text}`)
+  )
+}
+
 /**
  * This extension allows you to create links.
  * @see https://www.tiptap.dev/api/marks/link
@@ -316,6 +325,18 @@ export const Link = Mark.create<LinkOptions>({
       title: {
         default: null,
       },
+      // How Markdown wrote an auto link: a bare `https://…` or `<https://…>`
+      markdownAutolink: {
+        default: null,
+        parseHTML: element => {
+          const form = element.getAttribute('data-markdown-autolink')
+          return form === 'bare' || form === 'angle' ? form : null
+        },
+        renderHTML: attributes =>
+          attributes.markdownAutolink
+            ? { 'data-markdown-autolink': attributes.markdownAutolink }
+            : {},
+      },
     }
   },
 
@@ -362,18 +383,42 @@ export const Link = Mark.create<LinkOptions>({
   markdownTokenName: 'link',
 
   parseMarkdown: (token, helpers) => {
-    return helpers.applyMark('link', helpers.parseInline(token.tokens || []), {
-      href: token.href,
-      title: token.title || null,
-    })
+    const attrs: Record<string, unknown> = { href: token.href, title: token.title || null }
+    if (token.raw && !token.raw.startsWith('[')) {
+      attrs.markdownAutolink = token.raw.startsWith('<') ? 'angle' : 'bare'
+    }
+
+    return helpers.applyMark('link', helpers.parseInline(token.tokens || []), attrs)
   },
 
-  renderMarkdown: (node, h) => {
+  renderMarkdown: (node, h, context) => {
     const href = node.attrs?.href ?? ''
     const title = node.attrs?.title ?? ''
     const text = h.renderChildren(node)
+    const autolink = node.attrs?.markdownAutolink
+    const markText = context?.meta?.markText
+
+    // Another mark on part of the text would put its syntax inside the address
+    if (
+      autolink &&
+      context?.meta?.markTextNodes === 1 &&
+      typeof markText === 'string' &&
+      isAutolinkText(markText, href)
+    ) {
+      return autolink === 'angle' ? `<${text}>` : text
+    }
 
     return title ? `[${text}](${href} "${title}")` : `[${text}](${href})`
+  },
+
+  markdownOptions: {
+    // An auto link has no escapes, so its text stays as written
+    renderText: (text, attributes, markText) =>
+      attributes.markdownAutolink &&
+      text === markText &&
+      isAutolinkText(text, attributes.href ?? '')
+        ? text
+        : null,
   },
 
   addCommands() {

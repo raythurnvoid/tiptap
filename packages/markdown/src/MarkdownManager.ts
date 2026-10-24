@@ -32,7 +32,7 @@ import {
   reopenMarksAfterNode,
   wrapInMarkdownBlock,
 } from './utils.js'
-import { collectMarkSpanTexts } from './utils/collectMarkSpanTexts.js'
+import { type MarkSpan, collectMarkSpanTexts } from './utils/collectMarkSpanTexts.js'
 import { htmlContainsUnrecognizedTag } from './utils/htmlTagDetection.js'
 
 export class MarkdownManager {
@@ -1176,6 +1176,7 @@ export class MarkdownManager {
     parentNode?: JSONContent,
     atLineStart = false,
     atBlockEnd = false,
+    markSpans?: Map<string, MarkSpan>,
   ): string {
     const isInsideCode =
       (parentNode?.type != null && this.codeTypes.has(parentNode.type)) ||
@@ -1188,7 +1189,11 @@ export class MarkdownManager {
     for (const mark of node.marks || []) {
       const type = typeof mark === 'string' ? mark : mark.type
       const attributes = typeof mark === 'string' ? {} : mark.attrs || {}
-      const markText = this.getHandlersForNodeType(type)[0]?.renderText?.(text, attributes)
+      const markText = this.getHandlersForNodeType(type)[0]?.renderText?.(
+        text,
+        attributes,
+        markSpans?.get(type)?.text ?? text,
+      )
       if (markText != null) {
         return markText
       }
@@ -1444,6 +1449,7 @@ export class MarkdownManager {
           parentNode,
           atLineStart,
           atBlockEnd,
+          markSpanTexts[i],
         )
         let currentMarks = new Map((node.marks || []).map(mark => [mark.type, mark]))
 
@@ -1702,7 +1708,7 @@ export class MarkdownManager {
     markType: string,
     mark: any,
     openingMode: 'markdown' | 'html' = 'markdown',
-    markText?: string,
+    markSpan?: MarkSpan,
   ): string {
     if (openingMode === 'html') {
       return this.getHtmlReopenTags(markType)?.open || ''
@@ -1733,7 +1739,12 @@ export class MarkdownManager {
           indent: (content: string) => content,
           wrapInBlock: (prefix: string, content: string) => prefix + content,
         },
-        { index: 0, level: 0, parentType: 'text', meta: { markText } },
+        {
+          index: 0,
+          level: 0,
+          parentType: 'text',
+          meta: { markText: markSpan?.text, markTextNodes: markSpan?.textNodes },
+        },
       )
 
       // Extract the opening part (everything before placeholder)
@@ -1751,7 +1762,7 @@ export class MarkdownManager {
     markType: string,
     mark: any,
     openingMode: 'markdown' | 'html' = 'markdown',
-    markText?: string,
+    markSpan?: MarkSpan,
   ): string {
     if (openingMode === 'html') {
       return this.getHtmlReopenTags(markType)?.close || ''
@@ -1781,7 +1792,12 @@ export class MarkdownManager {
           indent: (content: string) => content,
           wrapInBlock: (prefix: string, content: string) => prefix + content,
         },
-        { index: 0, level: 0, parentType: 'text', meta: { markText } },
+        {
+          index: 0,
+          level: 0,
+          parentType: 'text',
+          meta: { markText: markSpan?.text, markTextNodes: markSpan?.textNodes },
+        },
       )
 
       // Extract the closing part (everything after placeholder)

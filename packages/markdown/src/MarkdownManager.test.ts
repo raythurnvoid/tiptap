@@ -265,7 +265,10 @@ Second paragraph.`
       const doc = manager.parse(':::probe <a href="/probe">Probe :::\n\nhttps://example.com')
 
       expect(doc.content!.at(-1)!.content![0].marks).toEqual([
-        { type: 'link', attrs: { href: 'https://example.com', title: null } },
+        {
+          type: 'link',
+          attrs: { href: 'https://example.com', title: null, markdownAutolink: 'bare' },
+        },
       ])
     })
 

@@ -28,11 +28,11 @@ describe('Literal "!" before a link', () => {
     expect(markdownManager.parse(output)).toEqual(json)
   })
 
-  it('escapes "!" before an autolink', () => {
+  it('keeps "!" before an angle autolink as written', () => {
     const json = markdownManager.parse('Great news!<https://example.com/p>')
     const output = markdownManager.serialize(json)
 
-    expect(output).toBe('Great news\\![https://example.com/p](https://example.com/p)')
+    expect(output).toBe('Great news!<https://example.com/p>')
     expect(collectTypes(markdownManager.parse(output))).not.toContain('image')
     expect(markdownManager.parse(output)).toEqual(json)
   })

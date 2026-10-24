@@ -380,9 +380,10 @@ export interface ExtendableConfig<
      * text with the usual escaping.
      *
      * Example: a mark that remembers an HTML entity writes `&copy;` back
-     * instead of `©`.
+     * instead of `©`. `markText` is all the text the mark covers, which can
+     * span more than one text node.
      */
-    renderText?: (text: string, attributes: Record<string, any>) => string | null
+    renderText?: (text: string, attributes: Record<string, any>, markText: string) => string | null
   }
 
   /**

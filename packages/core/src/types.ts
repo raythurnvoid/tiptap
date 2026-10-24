@@ -1012,7 +1012,7 @@ export interface MarkdownExtensionSpec {
     close: string
   }
   /** Lets a mark write the text it covers. `null` keeps the usual escaping. */
-  renderText?: (text: string, attributes: Record<string, any>) => string | null
+  renderText?: (text: string, attributes: Record<string, any>, markText: string) => string | null
   /** Custom tokenizer for marked.js to handle non-standard markdown syntax */
   tokenizer?: MarkdownTokenizer
 }

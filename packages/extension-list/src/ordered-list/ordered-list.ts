@@ -151,6 +151,12 @@ export const OrderedList = Node.create<OrderedListOptions>({
           return null
         },
       },
+      // Keep the `)` after the number from Markdown. `null` saves as `.`.
+      delimiter: {
+        default: null,
+        parseHTML: element => (element.getAttribute('data-delimiter') === ')' ? ')' : null),
+        renderHTML: attributes => (attributes.delimiter ? { 'data-delimiter': attributes.delimiter } : {}),
+      },
     }
   },
 
@@ -198,6 +204,10 @@ export const OrderedList = Node.create<OrderedListOptions>({
 
     if (typeValue) {
       attrs.type = typeValue
+    }
+
+    if (/^\s*\w+\)/.test(token.raw ?? '')) {
+      attrs.delimiter = ')'
     }
 
     if (Object.keys(attrs).length > 0) {

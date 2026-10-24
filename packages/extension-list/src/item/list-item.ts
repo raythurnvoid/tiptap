@@ -171,13 +171,13 @@ export const ListItem = Node.create<ListItemOptions>({
       h,
       (context: any) => {
         if (context.parentType === 'bulletList') {
-          return '- '
+          return `${context.meta?.parentAttrs?.bullet ?? '-'} `
         }
         if (context.parentType === 'orderedList') {
           const start = context.meta?.parentAttrs?.start || 1
           const type = context.meta?.parentAttrs?.type as string | undefined
           const index = start - 1 + (context.index || 0)
-          return getListMarker(type, index, '. ')
+          return getListMarker(type, index, `${context.meta?.parentAttrs?.delimiter ?? '.'} `)
         }
         // Fallback to bullet list for unknown parent types
         return '- '

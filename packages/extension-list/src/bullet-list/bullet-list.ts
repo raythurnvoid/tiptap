@@ -49,6 +49,10 @@ declare module '@tiptap/core' {
  */
 export const bulletListInputRegex = /^\s*([-+*])\s$/
 
+function bulletFromMarker(marker: string) {
+  return marker === '*' || marker === '+' ? marker : null
+}
+
 /**
  * This extension allows you to create bullet lists.
  * This requires the ListItem extension
@@ -73,6 +77,17 @@ export const BulletList = Node.create<BulletListOptions>({
     return `${this.options.itemTypeName}+`
   },
 
+  addAttributes() {
+    return {
+      // Keep the `*` or `+` marker from Markdown. `null` saves as `-`.
+      bullet: {
+        default: null,
+        parseHTML: element => bulletFromMarker(element.getAttribute('data-bullet') ?? ''),
+        renderHTML: attributes => (attributes.bullet ? { 'data-bullet': attributes.bullet } : {}),
+      },
+    }
+  },
+
   parseHTML() {
     return [{ tag: 'ul' }]
   },
@@ -88,8 +103,11 @@ export const BulletList = Node.create<BulletListOptions>({
       return []
     }
 
+    const bullet = bulletFromMarker(token.raw?.trimStart().charAt(0) ?? '')
+
     return {
       type: 'bulletList',
+      ...(bullet ? { attrs: { bullet } } : {}),
       content: token.items ? helpers.parseChildren(token.items) : [],
     }
   },

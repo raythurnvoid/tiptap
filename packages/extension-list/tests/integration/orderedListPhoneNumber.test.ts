@@ -38,7 +38,7 @@ describe('phone numbers starting a line', () => {
       content: [
         {
           type: 'orderedList',
-          attrs: { start: 216 },
+          attrs: { start: 216, delimiter: ')' },
           content: [
             {
               type: 'listItem',

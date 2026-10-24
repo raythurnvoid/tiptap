@@ -52,6 +52,23 @@ export const HardBreak = Node.create<HardBreakOptions>({
 
   linebreakReplacement: true,
 
+  addAttributes() {
+    return {
+      // How the Markdown file wrote this break, like two spaces or `<br>`. Empty means a backslash.
+      markdownSource: {
+        default: null,
+        parseHTML: element => {
+          const source = element.getAttribute('data-markdown-break')
+          return source ? decodeURIComponent(source) : null
+        },
+        renderHTML: attributes =>
+          attributes.markdownSource
+            ? { 'data-markdown-break': encodeURIComponent(attributes.markdownSource) }
+            : {},
+      },
+    }
+  },
+
   parseHTML() {
     return [{ tag: 'br' }]
   },
@@ -64,13 +81,17 @@ export const HardBreak = Node.create<HardBreakOptions>({
     return '\n'
   },
 
-  // A `#` heading is one line, so a break inside it must be a tag
-  renderMarkdown: (_node, _helpers, context) => (context.parentType === 'heading' ? '<br>' : `  \n`),
+  // A `#` heading is one line, so a break inside it must be a tag. A new break uses a backslash,
+  // because editors often delete two trailing spaces.
+  renderMarkdown: (node, _helpers, context) =>
+    context.parentType === 'heading' ? '<br>' : (node.attrs?.markdownSource ?? '\\\n'),
 
-  parseMarkdown: () => {
-    return {
-      type: 'hardBreak',
+  parseMarkdown: token => {
+    if (!token.raw || token.raw.startsWith('\\')) {
+      return { type: 'hardBreak' }
     }
+
+    return { type: 'hardBreak', attrs: { markdownSource: token.raw } }
   },
 
   addCommands() {

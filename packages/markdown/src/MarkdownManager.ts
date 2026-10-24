@@ -1175,6 +1175,7 @@ export class MarkdownManager {
     node: JSONContent,
     parentNode?: JSONContent,
     atLineStart = false,
+    atBlockEnd = false,
   ): string {
     const isInsideCode =
       (parentNode?.type != null && this.codeTypes.has(parentNode.type)) ||
@@ -1193,7 +1194,7 @@ export class MarkdownManager {
       }
     }
 
-    const escaped = this.escapeMarkdownSyntax(this.escapeHtml(text))
+    const escaped = this.escapeMarkdownSyntax(this.escapeHtml(text), atBlockEnd)
     return parentNode?.type === 'paragraph' || this.isUnderlinedHeading(parentNode)
       ? this.escapeBlockStarts(escaped, atLineStart)
       : escaped
@@ -1223,22 +1224,73 @@ export class MarkdownManager {
   }
 
   /**
-   * Backslash-escape characters that have special meaning in markdown inline
-   * syntax. This prevents literal characters in text nodes from being
-   * misinterpreted as formatting delimiters when the output is parsed again.
+   * Backslash-escape characters only where they would read back as Markdown
+   * syntax, so `snake_case`, `C:\Users` and `5 * 3` stay as written.
+   * The characters next to the text are unknown, except the end of a block
+   * when `atBlockEnd` is set. Next to an unknown character, a run always gets
+   * the escape.
    *
-   * The set covers the most common inline markdown syntax characters.
-   * Characters inside code blocks/code marks are skipped by the caller
-   * (`encodeTextForMarkdown`) via the existing `isInsideCode` guard.
+   * - `\` is an escape only before ASCII punctuation or at a line end.
+   * - A run of `*` or `~` between two spaces cannot open or close.
+   * - A run of `==` before a space or the block end cannot open. The app reads
+   *   `== a ==` as plain text, so it cannot close either.
+   * - A run of `_` between two letters or digits cannot open or close.
+   * - `` ` ``, `[` and `]` can pair with text far away, so they are always escaped.
+   *
+   * Whitespace at the text's edges can move outside a mark's delimiters, so it
+   * does not count as a space.
    *
    * A footnote reference like `[^1]` stays as written. Without a link
    * definition it reads back as the same text. Before `(`, `[` or `:` it
    * would start a link or a definition, so it is escaped there.
    */
-  private escapeMarkdownSyntax(text: string): string {
+  private escapeMarkdownSyntax(text: string, atBlockEnd = false): string {
+    const innerStart = text.length - text.trimStart().length
+    const innerEnd = text.trimEnd().length
+    // An empty string means nothing follows
+    const characterAt = (index: number) => {
+      if (index >= text.length && atBlockEnd) {
+        return ''
+      }
+      return index < innerStart || index >= innerEnd ? null : text[index]
+    }
+    const isSpace = (character: string | null) => character !== null && /[^\S\n]/.test(character)
+    const isWordCharacter = (character: string | null) =>
+      character !== null && /[\p{L}\p{N}]/u.test(character)
+    const escapeAll = (run: string) => run.replace(/./g, '\\$&')
+
     return text.replace(
-      /(\[\^[A-Za-z0-9-]+(?:_[A-Za-z0-9-]+)*\])(?![([:])|([\\`*_[\]~])/g,
-      (match, footnoteReference?: string) => footnoteReference ?? `\\${match}`,
+      /(\[\^[A-Za-z0-9-]+(?:_[A-Za-z0-9-]+)*\])(?![([:])|\*+|_+|~+|=+|[\\`[\]]/g,
+      (match, footnoteReference: string | undefined, offset: number) => {
+        if (footnoteReference) {
+          return match
+        }
+
+        const previous = characterAt(offset - 1)
+        const next = characterAt(offset + match.length)
+        const betweenSpaces = isSpace(previous) && isSpace(next)
+
+        switch (match[0]) {
+          case '\\':
+            return next && next !== '\n' && !/[!-/:-@[-`{-~]/.test(next) ? match : '\\\\'
+          case '*':
+          case '~':
+            return betweenSpaces ? match : escapeAll(match)
+          case '_':
+            return betweenSpaces || (isWordCharacter(previous) && isWordCharacter(next))
+              ? match
+              : escapeAll(match)
+          case '=':
+            // Only `==` is highlight syntax
+            if (match.length === 1 && previous !== '=' && next !== '=') {
+              return match
+            }
+            // A run opens a highlight only before text, and no bare run we write opens one to close here
+            return next === '' || isSpace(next) ? match : escapeAll(match)
+          default:
+            return `\\${match}`
+        }
+      },
     )
   }
 
@@ -1381,11 +1433,17 @@ export class MarkdownManager {
 
       if (node.type === 'text') {
         const atLineStart = result.length === 0 || result[result.length - 1].endsWith('\n')
+        // Marked text ends with its closing delimiters, not the block end
+        const atBlockEnd =
+          i === nodes.length - 1 &&
+          !node.marks?.length &&
+          (parentNode?.type === 'paragraph' || parentNode?.type === 'heading')
         let textContent = this.encodeTextForMarkdown(
           node.text || '',
           node,
           parentNode,
           atLineStart,
+          atBlockEnd,
         )
         let currentMarks = new Map((node.marks || []).map(mark => [mark.type, mark]))
 

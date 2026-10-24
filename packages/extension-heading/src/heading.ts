@@ -103,8 +103,10 @@ export const Heading = Node.create<HeadingOptions>({
 
     // Use current context for proper joining/spacing
     const content = h.renderChildren(node.content)
+    // A `#` run at the end of a `#` heading reads as its closing marks, so `Issue #` would lose the `#`
+    const escapeClosingHashes = (text: string) => text.replace(/(^|[ \t])(#+[ \t]*)$/, '$1\\$2')
     if (!content.includes('\n')) {
-      return `${headingChars} ${content}`
+      return `${headingChars} ${escapeClosingHashes(content)}`
     }
 
     // A `#` heading is one line. Only levels 1 and 2 have the underlined form that can hold more lines.
@@ -112,7 +114,7 @@ export const Heading = Node.create<HeadingOptions>({
       return `${content}\n${level === 1 ? '===' : '---'}`
     }
 
-    return `${headingChars} ${content.replace(/\n/g, ' ')}`
+    return `${headingChars} ${escapeClosingHashes(content.replace(/\n/g, ' '))}`
   },
 
   addCommands() {

@@ -13,7 +13,7 @@ export const expectedOutput = {
       type: 'paragraph',
       content: [
         { type: 'text', marks: [{ type: 'bold' }], text: 'Speaker:' },
-        { type: 'hardBreak' },
+        { type: 'hardBreak', attrs: { markdownSource: '  \n' } },
         { type: 'text', text: 'John Doe.' },
       ],
     },
@@ -21,7 +21,7 @@ export const expectedOutput = {
       type: 'paragraph',
       content: [
         { type: 'text', marks: [{ type: 'bold' }], text: 'Speaker:' },
-        { type: 'hardBreak' },
+        { type: 'hardBreak', attrs: { markdownSource: '  \n' } },
         { type: 'text', marks: [{ type: 'bold' }], text: 'John Doe' },
       ],
     },

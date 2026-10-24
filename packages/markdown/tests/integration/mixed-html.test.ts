@@ -118,7 +118,7 @@ describe('MarkdownManager Mixed Markdown + HTML', () => {
         type: 'paragraph',
         content: [
           { type: 'text', text: 'a ' },
-          { type: 'hardBreak' },
+          { type: 'hardBreak', attrs: { markdownSource: null } },
           { type: 'text', text: ' b' },
         ],
       },

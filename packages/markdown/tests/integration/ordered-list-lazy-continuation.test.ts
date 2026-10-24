@@ -45,7 +45,7 @@ describe('Ordered list lazy continuation parsing', () => {
                   type: 'paragraph',
                   content: [
                     { type: 'text', text: 'First item' },
-                    { type: 'hardBreak' },
+                    { type: 'hardBreak', attrs: { markdownSource: '\n' } },
                     { type: 'text', text: 'Continuation for the first item.' },
                   ],
                 },
@@ -58,7 +58,7 @@ describe('Ordered list lazy continuation parsing', () => {
                   type: 'paragraph',
                   content: [
                     { type: 'text', text: 'Second item' },
-                    { type: 'hardBreak' },
+                    { type: 'hardBreak', attrs: { markdownSource: '\n' } },
                     { type: 'text', text: 'Continuation for the second item.' },
                   ],
                 },
@@ -242,9 +242,9 @@ describe('Ordered list lazy continuation parsing', () => {
                   type: 'paragraph',
                   content: [
                     { type: 'text', text: 'one' },
-                    { type: 'hardBreak' },
+                    { type: 'hardBreak', attrs: { markdownSource: '\n' } },
                     { type: 'text', text: '#hashtag' },
-                    { type: 'hardBreak' },
+                    { type: 'hardBreak', attrs: { markdownSource: '\n' } },
                     { type: 'text', text: '####### seven' },
                   ],
                 },
@@ -460,7 +460,7 @@ describe('Ordered list lazy continuation parsing', () => {
                   type: 'paragraph',
                   content: [
                     { type: 'text', text: 'one' },
-                    { type: 'hardBreak' },
+                    { type: 'hardBreak', attrs: { markdownSource: '\n' } },
                     { type: 'text', text: '---' },
                   ],
                 },
@@ -495,7 +495,7 @@ describe('Ordered list lazy continuation parsing', () => {
                   type: 'paragraph',
                   content: [
                     { type: 'text', text: 'one' },
-                    { type: 'hardBreak' },
+                    { type: 'hardBreak', attrs: { markdownSource: '\n' } },
                     { type: 'text', text: '---foo' },
                   ],
                 },
@@ -530,7 +530,7 @@ describe('Ordered list lazy continuation parsing', () => {
                   type: 'paragraph',
                   content: [
                     { type: 'text', text: 'one' },
-                    { type: 'hardBreak' },
+                    { type: 'hardBreak', attrs: { markdownSource: '\n' } },
                     { type: 'text', text: '===' },
                   ],
                 },
@@ -592,7 +592,7 @@ describe('Ordered list lazy continuation parsing', () => {
                   type: 'paragraph',
                   content: [
                     { type: 'text', text: 'one' },
-                    { type: 'hardBreak' },
+                    { type: 'hardBreak', attrs: { markdownSource: '\n' } },
                     { type: 'text', text: 'lazy continuation' },
                   ],
                 },

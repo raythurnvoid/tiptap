@@ -286,7 +286,7 @@ describe('Overlapping marks serialization', () => {
 
     const result = markdownManagerWithBreak.serialize(json)
 
-    expect(result).toBe('**123*456***<em>789</em>  \nafter')
+    expect(result).toBe('**123*456***<em>789</em>\\\nafter')
     expect(normalizeMarks(markdownManagerWithBreak.parse(result))).toEqual(normalizeMarks(json))
   })
 

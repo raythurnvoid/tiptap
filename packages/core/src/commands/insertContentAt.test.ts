@@ -84,7 +84,11 @@ describe('insertContentAt', () => {
           {
             type: 'paragraph',
             content: [
-              { type: 'text', marks: [{ type: 'bold' }], text: 'hello' },
+              {
+                type: 'text',
+                marks: [{ type: 'bold', attrs: { markdownSyntax: null } }],
+                text: 'hello',
+              },
               { type: 'text', text: 'existing text' },
             ],
           },

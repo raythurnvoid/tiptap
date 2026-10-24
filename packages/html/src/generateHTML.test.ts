@@ -127,6 +127,7 @@ describe('generateHTML', () => {
               marks: [
                 {
                   type: 'italic',
+                  attrs: { markdownSyntax: null },
                 },
               ],
               text: 'basic',
@@ -140,6 +141,7 @@ describe('generateHTML', () => {
               marks: [
                 {
                   type: 'bold',
+                  attrs: { markdownSyntax: null },
                 },
               ],
               text: 'Tiptap',
@@ -152,6 +154,7 @@ describe('generateHTML', () => {
         },
         {
           type: 'bulletList',
+          attrs: { bullet: null, loose: false },
           content: [
             {
               type: 'listItem',
@@ -225,6 +228,7 @@ describe('generateHTML', () => {
                 },
                 {
                   type: 'hardBreak',
+                  attrs: { markdownSource: null },
                 },
                 {
                   type: 'text',

@@ -21,4 +21,10 @@ describe('worker HTML conversion', () => {
       vi.unstubAllGlobals()
     }
   })
+
+  it('reads attribute names in any case', () => {
+    const DirParagraph = Paragraph.extend({ addAttributes: () => ({ dir: { default: null } }) })
+    const json = generateJSON('<p DIR="rtl">x</p>', [Document, DirParagraph, Text])
+    expect(json.content[0].attrs.dir).toBe('rtl')
+  })
 })

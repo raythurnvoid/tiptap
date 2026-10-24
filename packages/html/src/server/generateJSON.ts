@@ -31,6 +31,20 @@ export function generateJSON(
     throw new Error('Failed to parse HTML string')
   }
 
+  // Linkedom keeps attribute names as written, but HTML reads `HREF` as `href`
+  doc.body.querySelectorAll('*').forEach(element => {
+    Array.from(element.attributes).forEach(attribute => {
+      const name = attribute.name.toLowerCase()
+      if (name === attribute.name) {
+        return
+      }
+      element.removeAttribute(attribute.name)
+      if (!element.hasAttribute(name)) {
+        element.setAttribute(name, attribute.value)
+      }
+    })
+  })
+
   return PMDOMParser.fromSchema(schema)
     .parse(doc.body as unknown as Node, options)
     .toJSON()

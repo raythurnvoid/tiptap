@@ -2,6 +2,7 @@ import { Bold } from '@tiptap/extension-bold'
 import { Code } from '@tiptap/extension-code'
 import { Document } from '@tiptap/extension-document'
 import { Italic } from '@tiptap/extension-italic'
+import { Link } from '@tiptap/extension-link'
 import { Paragraph } from '@tiptap/extension-paragraph'
 import { Strike } from '@tiptap/extension-strike'
 import { Text } from '@tiptap/extension-text'
@@ -11,7 +12,7 @@ import { MarkdownManager } from '../../src/MarkdownManager.js'
 
 describe('markdownSyntax', () => {
   const markdownManager = new MarkdownManager({
-    extensions: [Document, Paragraph, Text, Bold, Italic, Strike, Code],
+    extensions: [Document, Paragraph, Text, Bold, Italic, Strike, Code, Link],
   })
 
   it('keeps underscores and one tilde as written', () => {
@@ -69,5 +70,33 @@ describe('markdownSyntax', () => {
     }
 
     expect(markdownManager.serialize(json)).toBe('<code>a b</code> `a*b` `www.e.com`')
+  })
+
+  it('keeps a link tag only while its address and title match', () => {
+    const tag = "<a title='T' href=https://e.com>"
+    const link = (text: string, href: string, title: string | null) => ({
+      type: 'text',
+      text,
+      marks: [{ type: 'link', attrs: { href, title, markdownSyntax: tag } }],
+    })
+    const json = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            link('a', 'https://e.com', 'T'),
+            { type: 'text', text: ' ' },
+            link('b', 'https://f.com', 'T'),
+            { type: 'text', text: ' ' },
+            link('c', 'https://e.com', null),
+          ],
+        },
+      ],
+    }
+
+    expect(markdownManager.serialize(json)).toBe(
+      `${tag}a</a> [b](https://f.com "T") [c](https://e.com)`,
+    )
   })
 })

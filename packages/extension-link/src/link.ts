@@ -1,5 +1,5 @@
 import type { PasteRuleMatch } from '@tiptap/core'
-import { Mark, markPasteRule, mergeAttributes } from '@tiptap/core'
+import { Mark, markdownSyntaxAttribute, markPasteRule, mergeAttributes } from '@tiptap/core'
 import type { Plugin } from '@tiptap/pm/state'
 import { find, registerCustomProtocol, reset } from 'linkifyjs'
 
@@ -221,6 +221,23 @@ function isAutolinkText(text: string, href: string) {
   )
 }
 
+const HTML_ATTRIBUTE_REGEX = /([^\s"'>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g
+
+// An edited address or title no longer matches the tag the file wrote
+function linkTagFits(tag: string, href: string, title: string) {
+  if (!/^<a\s[^>]*>$/i.test(tag)) {
+    return false
+  }
+
+  const attributes = new Map(
+    Array.from(tag.slice(2, -1).matchAll(HTML_ATTRIBUTE_REGEX), match => [
+      match[1].toLowerCase(),
+      match[2] ?? match[3] ?? match[4] ?? '',
+    ]),
+  )
+  return attributes.get('href') === href && (attributes.get('title') ?? '') === title
+}
+
 /**
  * This extension allows you to create links.
  * @see https://www.tiptap.dev/api/marks/link
@@ -337,6 +354,8 @@ export const Link = Mark.create<LinkOptions>({
             ? { 'data-markdown-autolink': attributes.markdownAutolink }
             : {},
       },
+      // The `<a …>` tag the file wrote
+      markdownSyntax: markdownSyntaxAttribute(),
     }
   },
 
@@ -406,6 +425,11 @@ export const Link = Mark.create<LinkOptions>({
       isAutolinkText(markText, href)
     ) {
       return autolink === 'angle' ? `<${text}>` : text
+    }
+
+    const tag = node.attrs?.markdownSyntax
+    if (typeof tag === 'string' && linkTagFits(tag, href, title)) {
+      return `${tag}${text}</${tag.slice(1, 2)}>`
     }
 
     return title ? `[${text}](${href} "${title}")` : `[${text}](${href})`

@@ -29,7 +29,12 @@ const normalizeMarks = (node: any): any => {
   return {
     ...node,
     marks: node.marks
-      ? [...node.marks].sort((a: any, b: any) => a.type.localeCompare(b.type))
+      ? [...node.marks]
+          .sort((a: any, b: any) => a.type.localeCompare(b.type))
+          // Marks read from HTML carry the empty `markdownSyntax` default
+          .map(({ attrs, ...mark }: any) =>
+            attrs?.markdownSyntax === null ? mark : { ...mark, attrs },
+          )
       : node.marks,
     content: node.content ? node.content.map(normalizeMarks) : node.content,
   }

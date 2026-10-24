@@ -1,4 +1,11 @@
-import { Mark, markInputRule, markPasteRule, mergeAttributes } from '@tiptap/core'
+import {
+  getMarkDelimiters,
+  Mark,
+  markdownSyntaxAttribute,
+  markInputRule,
+  markPasteRule,
+  mergeAttributes,
+} from '@tiptap/core'
 
 export interface ItalicOptions {
   /**
@@ -64,6 +71,12 @@ export const Italic = Mark.create<ItalicOptions>({
     }
   },
 
+  addAttributes() {
+    return {
+      markdownSyntax: markdownSyntaxAttribute(),
+    }
+  },
+
   parseHTML() {
     return [
       {
@@ -111,7 +124,12 @@ export const Italic = Mark.create<ItalicOptions>({
 
   parseMarkdown: (token, helpers) => {
     // Convert 'em' token to italic mark
-    return helpers.applyMark('italic', helpers.parseInline(token.tokens || []))
+    const markdownSyntax = token.raw?.startsWith('_') ? '_' : null
+    return helpers.applyMark(
+      'italic',
+      helpers.parseInline(token.tokens || []),
+      markdownSyntax ? { markdownSyntax } : undefined,
+    )
   },
 
   markdownOptions: {
@@ -121,8 +139,9 @@ export const Italic = Mark.create<ItalicOptions>({
     },
   },
 
-  renderMarkdown: (node, h) => {
-    return `*${h.renderChildren(node)}*`
+  renderMarkdown: (node, h, context) => {
+    const { open, close } = getMarkDelimiters(node.attrs?.markdownSyntax, '*', context?.meta)
+    return `${open}${h.renderChildren(node)}${close}`
   },
 
   addKeyboardShortcuts() {

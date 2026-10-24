@@ -181,7 +181,7 @@ describe('extension-link autolink', () => {
     expect(editor.getJSON().content?.[1].content?.[1]).toEqual({
       type: 'text',
       text: '!',
-      marks: [{ type: 'bold' }],
+      marks: [{ type: 'bold', attrs: { markdownSyntax: null } }],
     })
   })
 

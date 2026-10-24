@@ -1431,7 +1431,7 @@ export class MarkdownManager {
       node?.type === 'text' ||
       (!!node?.type && !!this.getHandlersForNodeType(node.type)[0]?.staysInsideMarks)
     // Delimiters can depend on the whole mark run, not just one text node
-    const markSpanTexts = collectMarkSpanTexts(nodes)
+    const markSpanTexts = collectMarkSpanTexts(nodes, isInlineText)
     nodes.forEach((node, i) => {
       // Other atoms render outside text marks, even when they carry the same mark.
       // Close here so edge spaces stay outside the delimiters.
@@ -1751,7 +1751,12 @@ export class MarkdownManager {
           index: 0,
           level: 0,
           parentType: 'text',
-          meta: { markText: markSpan?.text, markTextNodes: markSpan?.textNodes },
+          meta: {
+            markText: markSpan?.text,
+            markTextNodes: markSpan?.textNodes,
+            markWordBefore: markSpan?.wordBefore,
+            markWordAfter: markSpan?.wordAfter,
+          },
         },
       )
 
@@ -1804,7 +1809,12 @@ export class MarkdownManager {
           index: 0,
           level: 0,
           parentType: 'text',
-          meta: { markText: markSpan?.text, markTextNodes: markSpan?.textNodes },
+          meta: {
+            markText: markSpan?.text,
+            markTextNodes: markSpan?.textNodes,
+            markWordBefore: markSpan?.wordBefore,
+            markWordAfter: markSpan?.wordAfter,
+          },
         },
       )
 

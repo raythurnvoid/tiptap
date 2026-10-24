@@ -1,5 +1,12 @@
 /** @jsxImportSource @tiptap/core */
-import { Mark, markInputRule, markPasteRule, mergeAttributes } from '@tiptap/core'
+import {
+  getMarkDelimiters,
+  Mark,
+  markdownSyntaxAttribute,
+  markInputRule,
+  markPasteRule,
+  mergeAttributes,
+} from '@tiptap/core'
 
 export interface BoldOptions {
   /**
@@ -62,6 +69,12 @@ export const Bold = Mark.create<BoldOptions>({
     }
   },
 
+  addAttributes() {
+    return {
+      markdownSyntax: markdownSyntaxAttribute(),
+    }
+  },
+
   parseHTML() {
     return [
       {
@@ -94,7 +107,12 @@ export const Bold = Mark.create<BoldOptions>({
 
   parseMarkdown: (token, helpers) => {
     // Convert 'strong' token to bold mark
-    return helpers.applyMark('bold', helpers.parseInline(token.tokens || []))
+    const markdownSyntax = token.raw?.startsWith('__') ? '__' : null
+    return helpers.applyMark(
+      'bold',
+      helpers.parseInline(token.tokens || []),
+      markdownSyntax ? { markdownSyntax } : undefined,
+    )
   },
 
   markdownOptions: {
@@ -104,8 +122,9 @@ export const Bold = Mark.create<BoldOptions>({
     },
   },
 
-  renderMarkdown: (node, h) => {
-    return `**${h.renderChildren(node)}**`
+  renderMarkdown: (node, h, context) => {
+    const { open, close } = getMarkDelimiters(node.attrs?.markdownSyntax, '**', context?.meta)
+    return `${open}${h.renderChildren(node)}${close}`
   },
 
   addCommands() {

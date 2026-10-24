@@ -2,6 +2,7 @@ import type { YType } from '../../../types/YType.js'
 import type { ProsemirrorJSONMark } from '../../../types/ProsemirrorJSONNode.js'
 import type { TextDelta } from '../../../types/TextDelta.js'
 import type { ProsemirrorJSONNode } from '../../../types/ProsemirrorJSONNode.js'
+import { elementMarksAttribute } from './elementMarksAttribute.js'
 import { yattr2markname } from './yattr2markname.js'
 import * as Y from 'yjs'
 import * as error from 'lib0/error'
@@ -38,9 +39,12 @@ export function yXmlFragmentToProsemirrorJSON(xmlFragment: Y.XmlFragment) {
       response = {
         type: item.nodeName,
       }
-      const attrs = item.getAttributes()
+      const { [elementMarksAttribute]: marks, ...attrs } = item.getAttributes()
       if (Object.keys(attrs).length) {
         response.attrs = attrs
+      }
+      if (Array.isArray(marks)) {
+        response.marks = marks
       }
       const children = item.toArray()
       if (children.length) {

@@ -384,6 +384,13 @@ export interface ExtendableConfig<
      * span more than one text node.
      */
     renderText?: (text: string, attributes: Record<string, any>, markText: string) => string | null
+
+    /**
+     * Lets an inline atom stay inside the marks around it, like text does.
+     * Use it for an atom that writes plain inline text, such as a raw HTML tag.
+     * Without it, marks close before the atom and open again after it.
+     */
+    staysInsideMarks?: boolean
   }
 
   /**

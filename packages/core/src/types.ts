@@ -1013,6 +1013,8 @@ export interface MarkdownExtensionSpec {
   }
   /** Lets a mark write the text it covers. `null` keeps the usual escaping. */
   renderText?: (text: string, attributes: Record<string, any>, markText: string) => string | null
+  /** Lets an inline atom stay inside the marks around it, like text. */
+  staysInsideMarks?: boolean
   /** Custom tokenizer for marked.js to handle non-standard markdown syntax */
   tokenizer?: MarkdownTokenizer
 }

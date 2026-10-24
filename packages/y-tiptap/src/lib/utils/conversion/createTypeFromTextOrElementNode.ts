@@ -2,6 +2,7 @@ import * as Y from 'yjs'
 import type { BindingMetadata } from '../../../types/BindingMetadata.js'
 import * as PModel from 'prosemirror-model'
 import { createTypeFromTextNodes } from './createTypeFromTextNodes.js'
+import { elementMarksAttribute } from './elementMarksAttribute.js'
 import { normalizePNodeContent } from './normalizePNodeContent.js'
 
 export const createTypeFromTextOrElementNode = (
@@ -19,6 +20,12 @@ const createTypeFromElementNode = (node: PModel.Node, meta: BindingMetadata) => 
     if (val !== null && key !== 'ychange') {
       type.setAttribute(key, val)
     }
+  }
+  if (node.marks.length > 0) {
+    type.setAttribute(
+      elementMarksAttribute,
+      node.marks.map(mark => mark.toJSON()),
+    )
   }
   type.insert(
     0,

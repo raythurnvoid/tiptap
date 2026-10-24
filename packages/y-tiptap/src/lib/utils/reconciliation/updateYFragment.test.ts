@@ -4,6 +4,7 @@ import * as Y from 'yjs'
 
 import { ySyncPluginKey } from '../../plugins/keys.js'
 import { createEmptyMeta } from '../conversion/createEmptyMeta.js'
+import { yXmlFragmentToProseMirrorRootNode } from '../conversion/yXmlFragmentToProseMirrorRootNode.js'
 import { yXmlFragmentToProsemirrorJSON } from '../conversion/yXmlFragmentToProsemirrorJSON.js'
 import { updateYFragment } from './updateYFragment.js'
 
@@ -140,5 +141,40 @@ describe('updateYFragment', () => {
     updateYFragment(document, fragment, schema.node('doc', null, [next]), meta)
 
     expect(element.getAttributes()).toEqual({ ychange: 'existing' })
+  })
+
+  it('keeps the marks of an inline node and updates them', () => {
+    const markSchema = new Schema({
+      nodes: {
+        doc: { content: 'block*' },
+        paragraph: { group: 'block', content: 'inline*' },
+        image: { group: 'inline', inline: true, attrs: { src: { default: null } } },
+        text: { group: 'inline' },
+      },
+      marks: { link: { attrs: { href: { default: null } } } },
+    })
+    const imageDoc = (href: string | null) =>
+      markSchema.node('doc', null, [
+        markSchema.node('paragraph', null, [
+          markSchema.node(
+            'image',
+            { src: 'i.png' },
+            null,
+            href ? [markSchema.mark('link', { href })] : [],
+          ),
+        ]),
+      ])
+    const { document, fragment, meta } = createFragment()
+
+    updateYFragment(document, fragment, imageDoc('a'), meta)
+    expect(yXmlFragmentToProseMirrorRootNode(fragment, markSchema).toJSON()).toEqual(
+      imageDoc('a').toJSON(),
+    )
+
+    updateYFragment(document, fragment, imageDoc('b'), createEmptyMeta())
+    expect(yXmlFragmentToProsemirrorJSON(fragment)).toEqual(imageDoc('b').toJSON())
+
+    updateYFragment(document, fragment, imageDoc(null), createEmptyMeta())
+    expect(yXmlFragmentToProsemirrorJSON(fragment)).toEqual(imageDoc(null).toJSON())
   })
 })

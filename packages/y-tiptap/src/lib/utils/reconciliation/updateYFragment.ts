@@ -5,6 +5,7 @@ import * as math from 'lib0/math'
 import { ySyncPluginKey } from '../../plugins/keys.js'
 import * as Y from 'yjs'
 import { createTypeFromTextOrElementNode } from '../conversion/createTypeFromTextOrElementNode.js'
+import { elementMarksAttribute } from '../conversion/elementMarksAttribute.js'
 import { normalizePNodeContent } from '../conversion/normalizePNodeContent.js'
 import { equalYTextPText } from './equalYTextPText.js'
 import { equalYTypePNode } from './equalYTypePNode.js'
@@ -44,9 +45,16 @@ export const updateYFragment = (
     }
 
     for (const key in yDomAttrs) {
-      if (pAttrs[key] === undefined) {
+      if (pAttrs[key] === undefined && key !== elementMarksAttribute) {
         yDomFragment.removeAttribute(key)
       }
+    }
+
+    const pMarks = pNode.marks.map(mark => mark.toJSON())
+    if (pMarks.length === 0) {
+      yDomFragment.removeAttribute(elementMarksAttribute)
+    } else if (JSON.stringify(yDomAttrs[elementMarksAttribute]) !== JSON.stringify(pMarks)) {
+      yDomFragment.setAttribute(elementMarksAttribute, pMarks)
     }
   }
 

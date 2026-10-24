@@ -168,6 +168,7 @@ export class MarkdownManager {
     const isIndenting = markdownCfg?.indentsContent ?? false
     const htmlReopen = markdownCfg?.htmlReopen
     const renderText = markdownCfg?.renderText
+    const staysInsideMarks = markdownCfg?.staysInsideMarks
 
     const spec: MarkdownExtensionSpec = {
       tokenName,
@@ -177,6 +178,7 @@ export class MarkdownManager {
       isIndenting,
       htmlReopen,
       renderText,
+      staysInsideMarks,
       tokenizer,
     }
 
@@ -1425,32 +1427,38 @@ export class MarkdownManager {
     const activeMarks: Map<string, any> = new Map()
     const reopenWithHtmlOnNextOpen = new Set<string>()
     const markOpeningModes = new Map<string, 'markdown' | 'html'>()
+    const isInlineText = (node?: JSONContent) =>
+      node?.type === 'text' ||
+      (!!node?.type && !!this.getHandlersForNodeType(node.type)[0]?.staysInsideMarks)
     // Delimiters can depend on the whole mark run, not just one text node
     const markSpanTexts = collectMarkSpanTexts(nodes)
     nodes.forEach((node, i) => {
-      // Atoms render outside text marks, even when they carry the same mark.
+      // Other atoms render outside text marks, even when they carry the same mark.
       // Close here so edge spaces stay outside the delimiters.
-      const nextNode = nodes[i + 1]?.type === 'text' ? nodes[i + 1] : null
+      const nextNode = isInlineText(nodes[i + 1]) ? nodes[i + 1] : null
 
       if (!node.type) {
         return
       }
 
-      if (node.type === 'text') {
+      if (isInlineText(node)) {
         const atLineStart = result.length === 0 || result[result.length - 1].endsWith('\n')
         // Marked text ends with its closing delimiters, not the block end
         const atBlockEnd =
           i === nodes.length - 1 &&
           !node.marks?.length &&
           (parentNode?.type === 'paragraph' || parentNode?.type === 'heading')
-        let textContent = this.encodeTextForMarkdown(
-          node.text || '',
-          node,
-          parentNode,
-          atLineStart,
-          atBlockEnd,
-          markSpanTexts[i],
-        )
+        let textContent =
+          node.type === 'text'
+            ? this.encodeTextForMarkdown(
+                node.text || '',
+                node,
+                parentNode,
+                atLineStart,
+                atBlockEnd,
+                markSpanTexts[i],
+              )
+            : this.renderNodeToMarkdown(node, parentNode, i, level)
         let currentMarks = new Map((node.marks || []).map(mark => [mark.type, mark]))
 
         // Find marks that need to be closed and opened

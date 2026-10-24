@@ -6,6 +6,7 @@ import { isVisible } from '../binding/isVisible.js'
 import { projectedMappings } from '../binding/projectedMappings.js'
 
 import { createTextNodesFromYText } from './createTextNodesFromYText.js'
+import { elementMarksAttribute } from './elementMarksAttribute.js'
 
 export const createNodeFromYElement = (
   el: Y.XmlElement<{ [key: string]: string }>,
@@ -47,7 +48,16 @@ export const createNodeFromYElement = (
       createChildren,
     )
   }
-  const attrs: Record<string, unknown> = el.getAttributes(snapshot)
+  const { [elementMarksAttribute]: yMarks, ...attrs }: Record<string, unknown> =
+    el.getAttributes(snapshot)
+  // Skip a stored mark that the schema no longer has
+  const marks = (Array.isArray(yMarks) ? yMarks : []).flatMap(markJSON => {
+    try {
+      return [schema.markFromJSON(markJSON)]
+    } catch {
+      return []
+    }
+  })
   if (snapshot !== undefined && el._item) {
     if (!isVisible(el._item, snapshot)) {
       attrs.ychange = computeYChange ? computeYChange('removed', el._item.id) : { type: 'removed' }
@@ -55,7 +65,7 @@ export const createNodeFromYElement = (
       attrs.ychange = computeYChange ? computeYChange('added', el._item.id) : { type: 'added' }
     }
   }
-  let node = schema.node(el.nodeName, attrs, children)
+  let node = schema.node(el.nodeName, attrs, children, marks)
   if (cachedNode !== undefined && !Array.isArray(cachedNode) && cachedNode.eq(node)) {
     node = cachedNode
   }

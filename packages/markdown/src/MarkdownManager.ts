@@ -1195,9 +1195,16 @@ export class MarkdownManager {
    * The set covers the most common inline markdown syntax characters.
    * Characters inside code blocks/code marks are skipped by the caller
    * (`encodeTextForMarkdown`) via the existing `isInsideCode` guard.
+   *
+   * A footnote reference like `[^1]` stays as written. Without a link
+   * definition it reads back as the same text. Before `(`, `[` or `:` it
+   * would start a link or a definition, so it is escaped there.
    */
   private escapeMarkdownSyntax(text: string): string {
-    return text.replace(/([\\`*_[\]~])/g, '\\$1')
+    return text.replace(
+      /(\[\^[A-Za-z0-9-]+(?:_[A-Za-z0-9-]+)*\])(?![([:])|([\\`*_[\]~])/g,
+      (match, footnoteReference?: string) => footnoteReference ?? `\\${match}`,
+    )
   }
 
   /**

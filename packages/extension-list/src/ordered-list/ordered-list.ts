@@ -157,6 +157,12 @@ export const OrderedList = Node.create<OrderedListOptions>({
         parseHTML: element => (element.getAttribute('data-delimiter') === ')' ? ')' : null),
         renderHTML: attributes => (attributes.delimiter ? { 'data-delimiter': attributes.delimiter } : {}),
       },
+      // Keep the blank lines between the items from Markdown
+      loose: {
+        default: false,
+        parseHTML: element => element.hasAttribute('data-loose'),
+        renderHTML: attributes => (attributes.loose ? { 'data-loose': '' } : {}),
+      },
     }
   },
 
@@ -229,7 +235,7 @@ export const OrderedList = Node.create<OrderedListOptions>({
       return ''
     }
 
-    return h.renderChildren(node.content, '\n')
+    return h.renderChildren(node.content, node.attrs?.loose ? '\n\n' : '\n')
   },
 
   markdownTokenizer: {

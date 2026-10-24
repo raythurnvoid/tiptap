@@ -85,6 +85,12 @@ export const BulletList = Node.create<BulletListOptions>({
         parseHTML: element => bulletFromMarker(element.getAttribute('data-bullet') ?? ''),
         renderHTML: attributes => (attributes.bullet ? { 'data-bullet': attributes.bullet } : {}),
       },
+      // Keep the blank lines between the items from Markdown
+      loose: {
+        default: false,
+        parseHTML: element => element.hasAttribute('data-loose'),
+        renderHTML: attributes => (attributes.loose ? { 'data-loose': '' } : {}),
+      },
     }
   },
 
@@ -117,7 +123,7 @@ export const BulletList = Node.create<BulletListOptions>({
       return ''
     }
 
-    return h.renderChildren(node.content, '\n')
+    return h.renderChildren(node.content, node.attrs?.loose ? '\n\n' : '\n')
   },
 
   markdownOptions: {

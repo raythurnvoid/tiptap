@@ -13,7 +13,6 @@ import {
   attrsEqual,
   callOrReturn,
   decodeHtmlEntities,
-  encodeHtmlEntities,
   flattenExtensions,
   generateJSON,
   getExtensionField,
@@ -168,6 +167,7 @@ export class MarkdownManager {
       null) as ExtendableConfig['markdownOptions']
     const isIndenting = markdownCfg?.indentsContent ?? false
     const htmlReopen = markdownCfg?.htmlReopen
+    const renderText = markdownCfg?.renderText
 
     const spec: MarkdownExtensionSpec = {
       tokenName,
@@ -176,6 +176,7 @@ export class MarkdownManager {
       renderMarkdown,
       isIndenting,
       htmlReopen,
+      renderText,
       tokenizer,
     }
 
@@ -1164,10 +1165,10 @@ export class MarkdownManager {
   }
 
   /**
-   * Encode HTML entities in text unless the node is inside a code context
-   * (code mark or code-block parent) where literal characters should be preserved.
-   * Also backslash-escape markdown-significant characters in non-code text to
-   * prevent them from being misinterpreted as formatting delimiters.
+   * Escape HTML and markdown-significant characters in text unless the node is
+   * inside a code context (code mark or code-block parent) where literal
+   * characters should be preserved. A mark with `renderText` writes its text
+   * itself.
    */
   private encodeTextForMarkdown(
     text: string,
@@ -1183,7 +1184,16 @@ export class MarkdownManager {
       return text
     }
 
-    const escaped = this.escapeMarkdownSyntax(encodeHtmlEntities(text))
+    for (const mark of node.marks || []) {
+      const type = typeof mark === 'string' ? mark : mark.type
+      const attributes = typeof mark === 'string' ? {} : mark.attrs || {}
+      const markText = this.getHandlersForNodeType(type)[0]?.renderText?.(text, attributes)
+      if (markText != null) {
+        return markText
+      }
+    }
+
+    const escaped = this.escapeMarkdownSyntax(this.escapeHtml(text))
     return parentNode?.type === 'paragraph' || this.isUnderlinedHeading(parentNode)
       ? this.escapeBlockStarts(escaped, atLineStart)
       : escaped
@@ -1199,6 +1209,17 @@ export class MarkdownManager {
       Number(node.attrs?.level ?? 1) <= 2 &&
       (node.content || []).some(child => child.text?.includes('\n'))
     )
+  }
+
+  /**
+   * Escape `&` and `<` only where they would read back as an entity, a tag or
+   * an autolink, so `R&D` and `a < b` stay as written. A `>` is special only
+   * at the start of a line, and `escapeBlockStarts` handles that.
+   */
+  private escapeHtml(text: string): string {
+    return text
+      .replace(/&(?=#?\w+;)/g, '&amp;')
+      .replace(/<(?=[A-Za-z/!?]|[^\s<>]*(?:>|$))/g, '&lt;')
   }
 
   /**
@@ -1222,13 +1243,13 @@ export class MarkdownManager {
   }
 
   /**
-   * Backslash-escape a heading, list, setext underline or table divider marker
-   * at the start of a paragraph line, so the text stays a paragraph when the
-   * output is parsed again.
+   * Backslash-escape a heading, list, quote, setext underline or table divider
+   * marker at the start of a paragraph line, so the text stays a paragraph when
+   * the output is parsed again.
    */
   private escapeBlockStarts(text: string, atLineStart: boolean): string {
     return text.replace(
-      /^([ \t]*)(#{1,6}(?=[ \t]|$)|[-+](?=[ \t]|$)|\d{1,9}[.)](?=[ \t]|$)|=(?=[= \t]*$)|(?=[^\n]*-)[|:-](?=[|: \t-]*$))/gm,
+      /^([ \t]*)(#{1,6}(?=[ \t]|$)|[-+](?=[ \t]|$)|\d{1,9}[.)](?=[ \t]|$)|>|=(?=[= \t]*$)|(?=[^\n]*-)[|:-](?=[|: \t-]*$))/gm,
       (match, indent: string, marker: string, offset: number) => {
         if (offset === 0 && !atLineStart) {
           return match

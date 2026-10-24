@@ -374,6 +374,15 @@ export interface ExtendableConfig<
       open: string
       close: string
     }
+
+    /**
+     * Lets a mark write the text it covers itself. Return `null` to write the
+     * text with the usual escaping.
+     *
+     * Example: a mark that remembers an HTML entity writes `&copy;` back
+     * instead of `©`.
+     */
+    renderText?: (text: string, attributes: Record<string, any>) => string | null
   }
 
   /**

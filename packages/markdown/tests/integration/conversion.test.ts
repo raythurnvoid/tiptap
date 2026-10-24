@@ -1,4 +1,4 @@
-import type { Extension } from '@tiptap/core'
+import { type Extension, Mark } from '@tiptap/core'
 import { Bold } from '@tiptap/extension-bold'
 import { Code } from '@tiptap/extension-code'
 import { CodeBlock } from '@tiptap/extension-code-block'
@@ -408,7 +408,7 @@ describe('Markdown Conversion Tests', () => {
       expect(json.content[0].content[0].text).toBe('foo & bar')
     })
 
-    it('should encode < and > back to entities when serializing', () => {
+    it('should encode a < that starts a tag when serializing', () => {
       const json = {
         type: 'doc',
         content: [
@@ -420,10 +420,10 @@ describe('Markdown Conversion Tests', () => {
       }
 
       const markdown = markdownManager.serialize(json)
-      expect(markdown).toBe('foo &lt;bar&gt; baz')
+      expect(markdown).toBe('foo &lt;bar> baz')
     })
 
-    it('should encode & back to &amp; when serializing', () => {
+    it('should keep a plain & when serializing', () => {
       const json = {
         type: 'doc',
         content: [
@@ -435,7 +435,28 @@ describe('Markdown Conversion Tests', () => {
       }
 
       const markdown = markdownManager.serialize(json)
-      expect(markdown).toBe('foo &amp; bar')
+      expect(markdown).toBe('foo & bar')
+    })
+
+    it('should escape & and < only where they would read as markup', () => {
+      const text = 'a < b, a <= b, <x, a<b, &copy;, &#169;, R&D, x>'
+      const json = {
+        type: 'doc',
+        content: [
+          { type: 'paragraph', content: [{ type: 'text', text }] },
+          { type: 'paragraph', content: [{ type: 'text', text: '> not a quote' }] },
+        ],
+      }
+
+      const markdown = markdownManager.serialize(json)
+      expect(markdown).toBe(
+        'a < b, a <= b, &lt;x, a&lt;b, &amp;copy;, &amp;#169;, R&D, x>\n\n\\> not a quote',
+      )
+      const paragraphs = markdownManager.parse(markdown).content
+      expect(paragraphs.map(node => node.content.map(child => child.text).join(''))).toEqual([
+        text,
+        '> not a quote',
+      ])
     })
 
     it('should roundtrip &lt;bar&gt; correctly', () => {
@@ -445,9 +466,9 @@ describe('Markdown Conversion Tests', () => {
       // Editor should show literal <bar>
       expect(json.content[0].content[0].text).toBe('foo <bar> baz')
 
-      // Serialize back should produce the entity form
+      // A `>` with no tag before it is plain text
       const serialized = markdownManager.serialize(json)
-      expect(serialized).toBe('foo &lt;bar&gt; baz')
+      expect(serialized).toBe('foo &lt;bar> baz')
     })
 
     it('should roundtrip &amp; correctly', () => {
@@ -456,7 +477,34 @@ describe('Markdown Conversion Tests', () => {
       expect(json.content[0].content[0].text).toBe('foo & bar')
 
       const serialized = markdownManager.serialize(json)
-      expect(serialized).toBe('foo &amp; bar')
+      expect(serialized).toBe('foo & bar')
+    })
+
+    it('should let a mark write its text with renderText', () => {
+      const Entity = Mark.create({
+        name: 'entity',
+        renderMarkdown: (node, helpers) => helpers.renderChildren(node.content || []),
+        markdownOptions: {
+          renderText: (text, attributes) => (text === '©' ? attributes.source : null),
+        },
+      })
+      const manager = new MarkdownManager({ extensions: [Document, Paragraph, Text, Bold, Entity] })
+      const entity = { type: 'entity', attrs: { source: '&copy;' } }
+
+      const markdown = manager.serialize({
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [
+              { type: 'text', text: '©', marks: [{ type: 'bold' }, entity] },
+              { type: 'text', text: ' 2026 ' },
+              { type: 'text', text: 'x', marks: [entity] },
+            ],
+          },
+        ],
+      })
+      expect(markdown).toBe('**&copy;** 2026 x')
     })
 
     it('should decode &quot; entity to literal " when parsing', () => {

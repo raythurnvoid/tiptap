@@ -34,6 +34,7 @@ import {
 } from './utils.js'
 import { type MarkSpan, collectMarkSpanTexts } from './utils/collectMarkSpanTexts.js'
 import { htmlContainsUnrecognizedTag } from './utils/htmlTagDetection.js'
+import { splitCodeMarkRuns } from './utils/splitCodeMarkRuns.js'
 
 export class MarkdownManager {
   private markedInstance: typeof marked
@@ -1427,6 +1428,7 @@ export class MarkdownManager {
     const activeMarks: Map<string, any> = new Map()
     const reopenWithHtmlOnNextOpen = new Set<string>()
     const markOpeningModes = new Map<string, 'markdown' | 'html'>()
+    nodes = splitCodeMarkRuns(nodes, this.codeTypes)
     const isInlineText = (node?: JSONContent) =>
       node?.type === 'text' ||
       (!!node?.type && !!this.getHandlersForNodeType(node.type)[0]?.staysInsideMarks)
@@ -1893,6 +1895,12 @@ export class MarkdownManager {
     // recorded rank fall back to MAX_SAFE_INTEGER so they sort innermost,
     // matching the implicit "registered last" assumption for ad-hoc marks.
     const byRankInnerFirst = (a: { type: string }, b: { type: string }) => {
+      // Nothing can open inside a code span
+      const codeA = this.codeTypes.has(a.type)
+      if (codeA !== this.codeTypes.has(b.type)) {
+        return codeA ? -1 : 1
+      }
+
       const rankA = this.extensionRanks.get(a.type) ?? Number.MAX_SAFE_INTEGER
       const rankB = this.extensionRanks.get(b.type) ?? Number.MAX_SAFE_INTEGER
 

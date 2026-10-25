@@ -1211,14 +1211,15 @@ export class MarkdownManager {
   }
 
   /**
-   * A level 1 or 2 heading with a line break in its text is written with an
-   * underline, so its lines start like paragraph lines.
+   * A level 1 or 2 heading with a line break in its text, or one the file
+   * underlined, is written with an underline, so its lines start like paragraph lines.
    */
   private isUnderlinedHeading(node?: JSONContent): boolean {
     return (
       node?.type === 'heading' &&
       Number(node.attrs?.level ?? 1) <= 2 &&
-      (node.content || []).some(child => child.text?.includes('\n'))
+      (Boolean(node.attrs?.markdownUnderline) ||
+        (node.content || []).some(child => child.text?.includes('\n')))
     )
   }
 

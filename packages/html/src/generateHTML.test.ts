@@ -107,6 +107,8 @@ describe('generateHTML', () => {
           type: 'heading',
           attrs: {
             level: 2,
+            markdownClosing: null,
+            markdownUnderline: null,
           },
           content: [
             {
@@ -201,6 +203,7 @@ describe('generateHTML', () => {
           type: 'codeBlock',
           attrs: {
             language: 'css',
+            markdownFence: null,
           },
           content: [
             {

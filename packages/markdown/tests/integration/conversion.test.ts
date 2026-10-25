@@ -360,13 +360,15 @@ describe('Markdown Conversion Tests', () => {
     it('should parse tilde fenced code blocks', () => {
       const markdown = '~~~\ncode block\n~~~'
       const json = markdownManager.parse(markdown)
-      expect(json).toEqual(codeBlockJSON)
+      expect(json.content[0].attrs).toEqual({ language: null, markdownFence: '~~~' })
+      expect(json.content[0].content).toEqual(codeBlockJSON.content[0].content)
     })
 
     it('should parse tilde fenced code blocks with language', () => {
       const markdown = '~~~js\nconsole.log("hello")\n~~~'
       const json = markdownManager.parse(markdown)
-      expect(json).toEqual(codeBlockWithLangJSON)
+      expect(json.content[0].attrs).toEqual({ language: 'js', markdownFence: '~~~' })
+      expect(json.content[0].content).toEqual(codeBlockWithLangJSON.content[0].content)
     })
 
     it('should parse backtick fenced code blocks', () => {
@@ -381,12 +383,12 @@ describe('Markdown Conversion Tests', () => {
       expect(json).toEqual(codeBlockWithLangJSON)
     })
 
-    it('should produce the same result for tilde and backtick fenced code blocks', () => {
+    it('should produce the same code for tilde and backtick fenced code blocks', () => {
       const tildeMarkdown = '~~~\ncode block\n~~~'
       const backtickMarkdown = '```\ncode block\n```'
       const tildeJSON = markdownManager.parse(tildeMarkdown)
       const backtickJSON = markdownManager.parse(backtickMarkdown)
-      expect(tildeJSON).toEqual(backtickJSON)
+      expect(tildeJSON.content[0].content).toEqual(backtickJSON.content[0].content)
     })
   })
 

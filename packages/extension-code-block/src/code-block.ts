@@ -132,6 +132,13 @@ export const CodeBlock = Node.create<CodeBlockOptions>({
         },
         rendered: false,
       },
+      // How the Markdown file opened this block, like `~~~` or `indented`. Empty means ```.
+      markdownFence: {
+        default: null,
+        parseHTML: element => element.getAttribute('data-markdown-fence'),
+        renderHTML: attributes =>
+          attributes.markdownFence ? { 'data-markdown-fence': attributes.markdownFence } : {},
+      },
     }
   },
 
@@ -171,27 +178,59 @@ export const CodeBlock = Node.create<CodeBlockOptions>({
       return []
     }
 
+    const opening = /^ {0,3}(`{3,}|~{3,})([ \t]*)/.exec(token.raw ?? '')
+    const fence = opening ? opening[1] + (token.lang ? opening[2] : '') : null
+    const markdownFence = token.codeBlockStyle === 'indented' ? 'indented' : fence
+
     return helpers.createNode(
       'codeBlock',
-      { language: token.lang || null },
+      {
+        language: token.lang || null,
+        ...(markdownFence && markdownFence !== '```' ? { markdownFence } : {}),
+      },
       token.text ? [helpers.createTextNode(token.text)] : [],
     )
   },
 
-  renderMarkdown: (node, h) => {
+  renderMarkdown: (node, h, ctx) => {
     let output = ''
-    // A backtick in the info string makes the opening line plain text, not a fence.
-    const language = node.attrs?.language?.includes('`') ? '' : node.attrs?.language || ''
+    const source = node.attrs?.markdownFence
     const code = node.content ? h.renderChildren(node.content) : ''
-    // The fence must be longer than any backtick run in the code. Otherwise a ``` line in the code
-    // closes the block early, and the rest of the code turns into Markdown.
-    const longestRun = Math.max(0, ...(code.match(/`+/g) ?? []).map(run => run.length))
-    const fence = '`'.repeat(Math.max(3, longestRun + 1))
+
+    // An indented block needs a blank line before it and text on its first and last line. A list
+    // just before it would take it in.
+    if (
+      source === 'indented' &&
+      !node.attrs?.language &&
+      (ctx?.parentType === 'doc' || ctx?.parentType === 'blockquote') &&
+      !/List$/.test(ctx?.previousNode?.type ?? '') &&
+      /^[ \t]*\S/.test(code) &&
+      /\S[ \t]*$/.test(code)
+    ) {
+      return code
+        .split('\n')
+        .map(line => (line ? `    ${line}` : ''))
+        .join('\n')
+    }
+
+    const sourceFence = typeof source === 'string' ? /^(`{3,}|~{3,})([ \t]*)$/.exec(source) : null
+    const fenceCharacter = sourceFence?.[1][0] ?? '`'
+    // A backtick in the info string makes a backtick opening line plain text, not a fence.
+    const language =
+      fenceCharacter === '`' && node.attrs?.language?.includes('`')
+        ? ''
+        : node.attrs?.language || ''
+    // The fence must be longer than any run of its character in the code. Otherwise a ``` line in
+    // the code closes the block early, and the rest of the code turns into Markdown.
+    const runs = code.match(fenceCharacter === '`' ? /`+/g : /~+/g) ?? []
+    const longestRun = Math.max(0, ...runs.map(run => run.length))
+    const fence = fenceCharacter.repeat(Math.max(sourceFence?.[1].length ?? 3, longestRun + 1))
+    const opening = `${fence}${language ? (sourceFence?.[2] ?? '') : ''}${language}`
 
     if (!node.content) {
-      output = `${fence}${language}\n\n${fence}`
+      output = `${opening}\n\n${fence}`
     } else {
-      const lines = [`${fence}${language}`, code, fence]
+      const lines = [opening, code, fence]
       output = lines.join('\n')
     }
 

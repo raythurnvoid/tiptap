@@ -351,7 +351,7 @@ describe('Ordered list lazy continuation parsing', () => {
         listWithSingleItem('one'),
         {
           type: 'codeBlock',
-          attrs: { language: null },
+          attrs: { language: null, ...(fence === '~~~' ? { markdownFence: fence } : {}) },
           content: [{ type: 'text', text: 'const x = 1' }],
         },
       ],

@@ -66,6 +66,22 @@ export const Heading = Node.create<HeadingOptions>({
         default: 1,
         rendered: false,
       },
+      // The closing marks the Markdown file wrote, like ` ##` in `## a ##`
+      markdownClosing: {
+        default: null,
+        parseHTML: element => element.getAttribute('data-markdown-closing'),
+        renderHTML: attributes =>
+          attributes.markdownClosing ? { 'data-markdown-closing': attributes.markdownClosing } : {},
+      },
+      // The underline the Markdown file wrote under the text, like `===`
+      markdownUnderline: {
+        default: null,
+        parseHTML: element => element.getAttribute('data-markdown-underline'),
+        renderHTML: attributes =>
+          attributes.markdownUnderline
+            ? { 'data-markdown-underline': attributes.markdownUnderline }
+            : {},
+      },
     }
   },
 
@@ -86,9 +102,19 @@ export const Heading = Node.create<HeadingOptions>({
   parseMarkdown: (token, helpers) => {
     // Convert 'heading' token to heading node
     // marked provides 'depth' property (1-6) for heading level
+    const lines = (token.raw ?? '').trimEnd().split('\n')
+    const underline =
+      lines.length > 1 ? /^ {0,3}(=+|-+)[ \t]*$/.exec(lines.at(-1) ?? '')?.[1] : null
+    const closing =
+      lines.length === 1 ? /^ {0,3}#{1,6}[ \t]+.*?([ \t]+#+)$/.exec(lines[0])?.[1] : null
+
     return helpers.createNode(
       'heading',
-      { level: token.depth || 1 },
+      {
+        level: token.depth || 1,
+        ...(underline ? { markdownUnderline: underline } : {}),
+        ...(closing ? { markdownClosing: closing } : {}),
+      },
       helpers.parseInline(token.tokens || []),
     )
   },
@@ -105,16 +131,18 @@ export const Heading = Node.create<HeadingOptions>({
     const content = h.renderChildren(node.content)
     // A `#` run at the end of a `#` heading reads as its closing marks, so `Issue #` would lose the `#`
     const escapeClosingHashes = (text: string) => text.replace(/(^|[ \t])(#+[ \t]*)$/, '$1\\$2')
-    if (!content.includes('\n')) {
-      return `${headingChars} ${escapeClosingHashes(content)}`
-    }
+    const underline = node.attrs?.markdownUnderline
+    const closing = /^[ \t]+#+$/.test(node.attrs?.markdownClosing ?? '')
+      ? node.attrs.markdownClosing
+      : ''
 
     // A `#` heading is one line. Only levels 1 and 2 have the underlined form that can hold more lines.
-    if (level <= 2) {
-      return `${content}\n${level === 1 ? '===' : '---'}`
+    if (level <= 2 && (content.includes('\n') || underline)) {
+      const keepsUnderline = (level === 1 ? /^=+$/ : /^-+$/).test(underline ?? '')
+      return `${content}\n${keepsUnderline ? underline : level === 1 ? '===' : '---'}`
     }
 
-    return `${headingChars} ${escapeClosingHashes(content.replace(/\n/g, ' '))}`
+    return `${headingChars} ${escapeClosingHashes(content.replace(/\n/g, ' '))}${closing}`
   },
 
   addCommands() {

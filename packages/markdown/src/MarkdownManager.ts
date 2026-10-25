@@ -1350,6 +1350,27 @@ export class MarkdownManager {
       return true
     }
 
+    // Inside a list item, a later line like `2. x` starts a list
+    const inListItem = (markdown: string) =>
+      inList ? `- ${markdown.replaceAll('\n', '\n  ')}` : markdown
+
+    return this.tokenShape(inListItem(first)) === this.tokenShape(inListItem(second))
+  }
+
+  /**
+   * Tell if a block written right under another one, with no blank line, still
+   * reads as the same two blocks.
+   */
+  private readsAsTwoBlocks(first: string, second: string): boolean {
+    return this.tokenShape(`${first}\n${second}`) === this.tokenShape(`${first}\n\n${second}`)
+  }
+
+  /**
+   * The tokens of a Markdown text without their source, to compare two texts.
+   * Escaped and plain text count as the same text, and blank lines between
+   * blocks do not count.
+   */
+  private tokenShape(markdown: string): string {
     const joinText = (tokens: unknown[]) =>
       tokens.reduce<unknown[]>((joined, token: any) => {
         const isText = token?.type === 'escape' || (token?.type === 'text' && !token.tokens)
@@ -1363,20 +1384,17 @@ export class MarkdownManager {
         }
         return joined
       }, [])
-    const shape = (markdown: string) =>
-      JSON.stringify(this.createLexer().lex(markdown), function (this: any, key, value) {
-        // `raw` is the source, and so is `text` next to parsed `tokens`
-        if (key === 'raw' || (key === 'text' && this.tokens)) {
-          return undefined
-        }
-        return Array.isArray(value) ? joinText(value) : value
-      })
+    const blocks = this.createLexer()
+      .lex(markdown)
+      .filter(token => token.type !== 'space')
 
-    // Inside a list item, a later line like `2. x` starts a list
-    const inListItem = (markdown: string) =>
-      inList ? `- ${markdown.replaceAll('\n', '\n  ')}` : markdown
-
-    return shape(inListItem(first)) === shape(inListItem(second))
+    return JSON.stringify(blocks, function (this: any, key, value) {
+      // `raw` is the source, and so is `text` next to parsed `tokens`
+      if (key === 'raw' || (key === 'text' && this.tokens)) {
+        return undefined
+      }
+      return Array.isArray(value) ? joinText(value) : value
+    })
   }
 
   renderNodeToMarkdown(
@@ -1784,6 +1802,19 @@ export class MarkdownManager {
         }
         previous = i
       })
+    }
+
+    // Blocks: keep a block right under the one before it when the file wrote it there
+    if (separator === '\n\n' && result.length === nodes.length) {
+      return result.reduce((joined, block, index) => {
+        if (index === 0) {
+          return block
+        }
+        const tight =
+          nodes[index].attrs?.markdownTight === true &&
+          this.readsAsTwoBlocks(result[index - 1], block)
+        return `${joined}${tight ? '\n' : separator}${block}`
+      }, '')
     }
 
     return result.join(separator)

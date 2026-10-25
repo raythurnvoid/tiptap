@@ -144,10 +144,15 @@ export function renderNestedMarkdownContent(
       const childContent = h.renderChild?.(child, index + 1) ?? h.renderChildren([child])
       if (childContent !== undefined && childContent !== null) {
         const indentedChild = indentLines(childContent)
+        const previous = index === 0 ? content : children[index - 1]
+        const tight = child.attrs?.markdownTight === true
+        // Text right under a heading, rule or fence still reads as its own paragraph
+        const paragraphFitsBelow =
+          tight && ['heading', 'horizontalRule', 'codeBlock'].includes(previous?.type ?? '')
 
         const blankLine =
-          child.type === 'paragraph' ||
-          (options?.blankLineBeforeBlocks && !/List$/.test(child.type ?? '')) ||
+          (child.type === 'paragraph' && !paragraphFitsBelow) ||
+          (options?.blankLineBeforeBlocks && !tight && !/List$/.test(child.type ?? '')) ||
           // A line of only `-` right under the text above turns it into a heading
           /^-+[ \t]*(?:\n|$)/.test(childContent)
         output += blankLine ? `\n\n${indentedChild}` : `\n${indentedChild}`

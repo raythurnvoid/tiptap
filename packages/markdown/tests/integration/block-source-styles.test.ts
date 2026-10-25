@@ -62,6 +62,34 @@ describe('Code block and heading styles', () => {
     expect(markdownManager.serialize(doc)).toBe('~~~~\n~~~\n~~~~')
   })
 
+  const codeBlock = (attrs: Record<string, unknown>) => ({
+    type: 'doc',
+    content: [{ type: 'codeBlock', attrs, content: [{ type: 'text', text: 'x' }] }],
+  })
+
+  it.each([
+    [
+      'after the language',
+      { language: 'ts', markdownMeta: ' title="a"' },
+      '```ts title="a"\nx\n```',
+    ],
+    ['after a changed language', { language: 'js', markdownMeta: ' {1}' }, '```js {1}\nx\n```'],
+    ['not without a language', { language: null, markdownMeta: ' title="a"' }, '```\nx\n```'],
+    [
+      'not with a backtick in a backtick fence',
+      { language: 'sh', markdownMeta: ' a`b' },
+      '```sh\nx\n```',
+    ],
+    [
+      'with a backtick in a `~~~` fence',
+      { language: 'sh', markdownFence: '~~~', markdownMeta: ' a`b' },
+      '~~~sh a`b\nx\n~~~',
+    ],
+    ['not on its own line', { language: 'ts', markdownMeta: ' a\nb' }, '```ts\nx\n```'],
+  ])('writes the info string meta %s', (_name, attrs, markdown) => {
+    expect(markdownManager.serialize(codeBlock(attrs))).toBe(markdown)
+  })
+
   const indentedBlock = (text: string, language: string | null = null) => ({
     type: 'codeBlock',
     attrs: { markdownFence: 'indented', language },

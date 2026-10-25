@@ -205,6 +205,7 @@ describe('generateHTML', () => {
           attrs: {
             language: 'css',
             markdownFence: null,
+            markdownMeta: null,
           },
           content: [
             {

@@ -139,6 +139,13 @@ export const CodeBlock = Node.create<CodeBlockOptions>({
         renderHTML: attributes =>
           attributes.markdownFence ? { 'data-markdown-fence': attributes.markdownFence } : {},
       },
+      // The info string after the language, like ` title="a"` in ```ts title="a"
+      markdownMeta: {
+        default: null,
+        parseHTML: element => element.getAttribute('data-markdown-meta'),
+        renderHTML: attributes =>
+          attributes.markdownMeta ? { 'data-markdown-meta': attributes.markdownMeta } : {},
+      },
     }
   },
 
@@ -225,7 +232,13 @@ export const CodeBlock = Node.create<CodeBlockOptions>({
     const runs = code.match(fenceCharacter === '`' ? /`+/g : /~+/g) ?? []
     const longestRun = Math.max(0, ...runs.map(run => run.length))
     const fence = fenceCharacter.repeat(Math.max(sourceFence?.[1].length ?? 3, longestRun + 1))
-    const opening = `${fence}${language ? (sourceFence?.[2] ?? '') : ''}${language}`
+    // Without a language, the meta would read as the language
+    const meta =
+      language && /^[ \t][^\n]*$/.test(node.attrs?.markdownMeta ?? '')
+        ? node.attrs.markdownMeta
+        : ''
+    const info = fenceCharacter === '`' && meta.includes('`') ? language : `${language}${meta}`
+    const opening = `${fence}${language ? (sourceFence?.[2] ?? '') : ''}${info}`
 
     if (!node.content) {
       output = `${opening}\n\n${fence}`

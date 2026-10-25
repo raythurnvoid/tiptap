@@ -42,6 +42,7 @@ describe('Code block and heading styles', () => {
     ['a heading that starts a numbered item', '1. # a\n2. b'],
     ['a heading under an empty list item', '-\n  # a'],
     ['text under a number', '1.\n   a\n   b'],
+    ['a list that starts at 0', '0. a\n1. b'],
     ['no space after a quote marker', '>a\n>\n>    code'],
     ['no space before a nested quote', '> a\n>\n>> b'],
   ])('keeps %s', (_name, markdown) => {

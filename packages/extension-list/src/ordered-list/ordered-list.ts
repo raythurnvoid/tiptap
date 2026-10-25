@@ -204,7 +204,7 @@ export const OrderedList = Node.create<OrderedListOptions>({
       return []
     }
 
-    const startValue = token.start || 1
+    const startValue = token.start ?? 1
     const typeValue = token.typeMarker as string | undefined
     const content = token.items ? parseListItems(token.items, helpers) : []
 
@@ -277,7 +277,7 @@ export const OrderedList = Node.create<OrderedListOptions>({
         return undefined
       }
 
-      const startValue = listItems[0]?.number || 1
+      const startValue = listItems[0]?.number ?? 1
       const typeMarker = listItems[0]?.type
 
       return {

@@ -232,7 +232,7 @@ export const ListItem = Node.create<ListItemOptions>({
           return `${context.meta?.parentAttrs?.bullet ?? '-'} `
         }
         if (context.parentType === 'orderedList') {
-          const start = context.meta?.parentAttrs?.start || 1
+          const start = context.meta?.parentAttrs?.start ?? 1
           const type = context.meta?.parentAttrs?.type as string | undefined
           const index = start - 1 + (context.meta?.parentAttrs?.sameNumber ? 0 : context.index || 0)
           return getListMarker(type, index, `${context.meta?.parentAttrs?.delimiter ?? '.'} `)

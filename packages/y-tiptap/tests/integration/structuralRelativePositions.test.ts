@@ -809,6 +809,41 @@ describe('relative positions through structural changes', () => {
     expect([first, second].map(client => resolvePosition(client, encoded))).toEqual([null, null])
   })
 
+  it.each(['text', 'split', 'join'])('does not write again when a %s edit refreshes', kind => {
+    const client = createClient()
+    client.view.dispatch(
+      client.view.state.tr.replaceWith(0, client.view.state.doc.content.size, paragraph(text)),
+    )
+    if (kind === 'text') {
+      client.view.dispatch(client.view.state.tr.insertText('x', 2))
+    } else {
+      client.view.dispatch(client.view.state.tr.split(8))
+      if (kind === 'join') {
+        client.view.dispatch(client.view.state.tr.join(client.view.state.doc.child(0).nodeSize))
+      }
+    }
+
+    const store = client.document.share.get('__tiptap_position_migrations:root:prosemirror') as
+      | Y.Map<unknown>
+      | undefined
+    if (kind !== 'text') {
+      expect(store?.size).toBeGreaterThan(0)
+    }
+    const previousSize = store?.size ?? 0
+    const previousState = Y.encodeStateAsUpdate(client.document)
+    let updates = 0
+    client.document.on('update', () => {
+      updates += 1
+    })
+
+    client.view.updateState(client.view.state)
+    client.view.updateState(client.view.state)
+
+    expect(updates).toBe(0)
+    expect(store?.size ?? 0).toBe(previousSize)
+    expect(Y.encodeStateAsUpdate(client.document)).toEqual(previousState)
+  })
+
   it('maps appended typing before the split is flushed to Yjs', () => {
     const first = createClient()
     first.view.dispatch(

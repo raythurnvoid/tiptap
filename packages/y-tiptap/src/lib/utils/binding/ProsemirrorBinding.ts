@@ -404,8 +404,8 @@ export class ProsemirrorBinding {
     this.doc.transact(() => {
       updateYFragment(this.doc, this.type, doc, this)
 
-      // Publish identity transfers with the content so peers receive both atomically.
-      if (plan?.doc === doc) {
+      // Publish transfers with the content, once per document change.
+      if (plan?.doc === doc && this.syncedDoc !== doc) {
         applyPositionMigration(this.type, plan, this, getPositionMigrationStore(this.type))
       }
 

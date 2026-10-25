@@ -41,6 +41,8 @@ export class MarkdownManager {
   private activeParseLexer: Lexer | null = null
   /** How a text block being written escapes its text, see `renderNodesWithMarkBoundaries` */
   private escapeMode: 'all' | 'relaxed' | null = null
+  /** The lists around the node being written, nearest last */
+  private listTypes: string[] = []
   private registry: Map<string, MarkdownExtensionSpec[]>
   private nodeTypeRegistry: Map<string, MarkdownExtensionSpec[]>
   /**
@@ -1278,12 +1280,12 @@ export class MarkdownManager {
           return match
         }
 
-        // The caller checks that the whole block still reads the same. A `[ ]` could still start a task item.
-        if (
-          this.escapeMode === 'relaxed' &&
-          match !== '\\' &&
-          !(offset === 0 && /^\[[ xX]\]/.test(text))
-        ) {
+        // The caller checks that the whole block still reads the same. A `[ ]` could still start a
+        // task in a bullet item, so it keeps the escape there.
+        const listType = this.listTypes.at(-1)
+        const startsTask =
+          offset === 0 && /^\[[ xX]\]/.test(text) && !!listType && listType !== 'orderedList'
+        if (this.escapeMode === 'relaxed' && match !== '\\' && !startsTask) {
           return match
         }
 
@@ -1343,16 +1345,20 @@ export class MarkdownManager {
 
   /**
    * Tell if two Markdown texts parse to the same tokens. Escaped and plain text
-   * count as the same text. `inList` reads them inside a list item.
+   * count as the same text. `listType` reads them inside an item of that list.
    */
-  private readsTheSame(first: string, second: string, inList: boolean): boolean {
+  private readsTheSame(first: string, second: string, listType?: string): boolean {
     if (first === second) {
       return true
     }
 
-    // Inside a list item, a later line like `2. x` starts a list
+    // Inside a list item, a later line like `2. x` starts a list, and `[ ]` can start a task.
+    // A numbered item never starts a task.
+    const marker = listType === 'orderedList' ? '1. ' : '- '
     const inListItem = (markdown: string) =>
-      inList ? `- ${markdown.replaceAll('\n', '\n  ')}` : markdown
+      listType
+        ? `${marker}${markdown.replaceAll('\n', `\n${' '.repeat(marker.length)}`)}`
+        : markdown
 
     return this.tokenShape(inListItem(first)) === this.tokenShape(inListItem(second))
   }
@@ -1459,10 +1465,16 @@ export class MarkdownManager {
       },
     }
 
-    // First render the node itself (this will render children recursively)
-    const rendered = handler.renderMarkdown?.(node, helpers, context) || ''
+    if (!handler.isIndenting) {
+      return handler.renderMarkdown?.(node, helpers, context) || ''
+    }
 
-    return rendered
+    this.listTypes.push(node.type)
+    try {
+      return handler.renderMarkdown?.(node, helpers, context) || ''
+    } finally {
+      this.listTypes.pop()
+    }
   }
 
   /**
@@ -1513,8 +1525,7 @@ export class MarkdownManager {
 
         this.escapeMode = 'relaxed'
         const relaxed = this.renderNodesWithMarkBoundaries(nodes, parentNode, separator, level)
-        // Only lists raise the level
-        return this.readsTheSame(escaped, relaxed, level > 0) ? relaxed : escaped
+        return this.readsTheSame(escaped, relaxed, this.listTypes.at(-1)) ? relaxed : escaped
       } finally {
         this.escapeMode = null
       }

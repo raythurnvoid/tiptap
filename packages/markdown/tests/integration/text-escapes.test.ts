@@ -1,6 +1,6 @@
 import { Document } from '@tiptap/extension-document'
 import { Italic } from '@tiptap/extension-italic'
-import { BulletList, ListItem } from '@tiptap/extension-list'
+import { BulletList, ListItem, OrderedList, TaskItem, TaskList } from '@tiptap/extension-list'
 import { Paragraph } from '@tiptap/extension-paragraph'
 import { Text } from '@tiptap/extension-text'
 import { describe, expect, it } from 'vite-plus/test'
@@ -9,7 +9,17 @@ import { MarkdownManager } from '../../src/MarkdownManager.js'
 
 describe('Text escapes', () => {
   const markdownManager = new MarkdownManager({
-    extensions: [Document, Paragraph, Text, Italic, BulletList, ListItem],
+    extensions: [
+      Document,
+      Paragraph,
+      Text,
+      Italic,
+      BulletList,
+      OrderedList,
+      ListItem,
+      TaskList,
+      TaskItem,
+    ],
   })
   const paragraph = (...content: any[]) => ({
     type: 'doc',
@@ -22,6 +32,7 @@ describe('Text escapes', () => {
     'glob **/*.ts and *.md',
     '~/projects and ~user',
     '[TODO] fix login',
+    '[ ] a',
     '100*2 = 200',
     '<3 and </3',
     'Version\n2. x',
@@ -58,6 +69,22 @@ describe('Text escapes', () => {
     }
 
     expect(markdownManager.serialize(doc)).toBe('- \\[ ] a')
+  })
+
+  it('writes a task box at the start of a numbered item as it is', () => {
+    const doc = {
+      type: 'doc',
+      content: [
+        {
+          type: 'orderedList',
+          content: [
+            { type: 'listItem', content: [{ type: 'paragraph', content: [text('[ ] a')] }] },
+          ],
+        },
+      ],
+    }
+
+    expect(markdownManager.serialize(doc)).toBe('1. [ ] a')
   })
 
   it('escapes a later line like "2." in a list item, where it would start a list', () => {

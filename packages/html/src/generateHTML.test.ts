@@ -160,7 +160,7 @@ describe('generateHTML', () => {
           content: [
             {
               type: 'listItem',
-              attrs: { loose: false, indent: null },
+              attrs: { loose: false, indent: null, blockOnMarker: false },
               content: [
                 {
                   type: 'paragraph',
@@ -175,7 +175,7 @@ describe('generateHTML', () => {
             },
             {
               type: 'listItem',
-              attrs: { loose: false, indent: null },
+              attrs: { loose: false, indent: null, blockOnMarker: false },
               content: [
                 {
                   type: 'paragraph',

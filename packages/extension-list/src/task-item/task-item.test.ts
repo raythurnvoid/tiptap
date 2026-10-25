@@ -658,7 +658,7 @@ describe('TaskItem', () => {
           content: [
             {
               type: 'listItem',
-              attrs: { loose: false, indent: null },
+              attrs: { loose: false, indent: null, blockOnMarker: false },
               content: [
                 {
                   type: 'paragraph',
@@ -1077,7 +1077,7 @@ describe('TaskItem', () => {
           content: [
             {
               type: 'listItem',
-              attrs: { loose: false, indent: null },
+              attrs: { loose: false, indent: null, blockOnMarker: false },
               content: [
                 {
                   type: 'paragraph',

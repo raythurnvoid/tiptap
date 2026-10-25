@@ -1,7 +1,7 @@
 import { CodeBlock } from '@tiptap/extension-code-block'
 import { Document } from '@tiptap/extension-document'
 import { Heading } from '@tiptap/extension-heading'
-import { BulletList, ListItem } from '@tiptap/extension-list'
+import { BulletList, ListItem, OrderedList } from '@tiptap/extension-list'
 import { Paragraph } from '@tiptap/extension-paragraph'
 import { Text } from '@tiptap/extension-text'
 import { describe, expect, it } from 'vite-plus/test'
@@ -10,7 +10,7 @@ import { MarkdownManager } from '../../src/MarkdownManager.js'
 
 describe('Code block and heading styles', () => {
   const markdownManager = new MarkdownManager({
-    extensions: [Document, Paragraph, Text, CodeBlock, Heading, BulletList, ListItem],
+    extensions: [Document, Paragraph, Text, CodeBlock, Heading, BulletList, OrderedList, ListItem],
   })
 
   it.each([
@@ -21,6 +21,10 @@ describe('Code block and heading styles', () => {
     ['closing marks', '## a ##'],
     ['an underline', 'a\n='],
     ['an underline over text that starts like a list', '\\- a\n---'],
+    ['a heading that starts a list item', '- # a\n- b'],
+    ['a fence that starts a list item', '- ```\n  code\n  ```'],
+    ['a heading that starts a numbered item', '1. # a\n2. b'],
+    ['a heading under an empty list item', '-\n  # a'],
   ])('keeps %s', (_name, markdown) => {
     expect(markdownManager.serialize(markdownManager.parse(markdown))).toBe(markdown)
   })
@@ -71,5 +75,22 @@ describe('Code block and heading styles', () => {
     ],
   ])('writes a fence for an indented block when %s', (_name, content, markdown) => {
     expect(markdownManager.serialize({ type: 'doc', content })).toBe(markdown)
+  })
+
+  it('writes the block under the marker once the item has text', () => {
+    const heading = { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'h' }] }
+    const doc = {
+      type: 'doc',
+      content: [
+        {
+          type: 'bulletList',
+          content: [
+            { type: 'listItem', attrs: { blockOnMarker: true }, content: [paragraph, heading] },
+          ],
+        },
+      ],
+    }
+
+    expect(markdownManager.serialize(doc)).toBe('- a\n  # h')
   })
 })

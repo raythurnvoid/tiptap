@@ -3,6 +3,7 @@ import { mergeAttributes, Node, renderNestedMarkdownContent } from '@tiptap/core
 
 import { createBranchingListDeleteKeymap } from '../helpers/createBranchingListDeleteKeymap.js'
 import { nestedIndentFromRaw } from '../helpers/nestedIndentFromRaw.js'
+import { startItemWithParagraph } from '../helpers/startItemWithParagraph.js'
 
 import { getListMarker } from '../ordered-list/roman.js'
 
@@ -89,6 +90,12 @@ export const ListItem = Node.create<ListItemOptions>({
           element.hasAttribute('data-indent') ? Number(element.getAttribute('data-indent')) : null,
         renderHTML: attributes =>
           attributes.indent ? { 'data-indent': String(attributes.indent) } : {},
+      },
+      // The file put the item's first block on the marker line, like `- # Title`
+      blockOnMarker: {
+        default: false,
+        parseHTML: element => element.hasAttribute('data-block-on-marker'),
+        renderHTML: attributes => (attributes.blockOnMarker ? { 'data-block-on-marker': '' } : {}),
       },
     }
   },
@@ -179,13 +186,21 @@ export const ListItem = Node.create<ListItemOptions>({
       ]
     }
 
-    // Marked adds a space token for a blank line between the item's blocks
-    const loose = token.tokens?.some(child => child.type === 'space')
+    const { blockOnMarker, content: itemContent } = startItemWithParagraph(content, token.raw ?? '')
+    content = itemContent
+
+    // Marked adds a space token for a blank line between the item's blocks. The first one only
+    // means the item's text starts on the next line.
+    const loose = token.tokens?.some((child, index) => index > 0 && child.type === 'space')
     // A paragraph keeps its own extra spaces, so only a nested list takes the indent
     const indent = /List$/.test(content[1]?.type ?? '')
       ? nestedIndentFromRaw(token.raw ?? '')
       : null
-    const attrs = { ...(loose ? { loose: true } : {}), ...(indent ? { indent } : {}) }
+    const attrs = {
+      ...(loose ? { loose: true } : {}),
+      ...(indent ? { indent } : {}),
+      ...(blockOnMarker ? { blockOnMarker } : {}),
+    }
 
     return {
       type: 'listItem',
@@ -195,8 +210,15 @@ export const ListItem = Node.create<ListItemOptions>({
   },
 
   renderMarkdown: (node, h, ctx) => {
+    const [firstChild, ...otherChildren] = node.content ?? []
+    // Write the block back on the marker line while the paragraph before it is still empty
+    const blockOnMarker =
+      node.attrs?.blockOnMarker === true &&
+      firstChild?.type === 'paragraph' &&
+      !firstChild.content?.length &&
+      otherChildren.length > 0
     const markdown = renderNestedMarkdownContent(
-      node,
+      blockOnMarker ? { ...node, content: otherChildren } : node,
       h,
       (context: any) => {
         if (context.parentType === 'bulletList') {
@@ -216,6 +238,7 @@ export const ListItem = Node.create<ListItemOptions>({
         alignNestedToPrefix: ctx?.parentType === 'orderedList',
         blankLineBeforeBlocks: node.attrs?.loose === true,
         indentWidth: node.attrs?.indent,
+        indentMainContent: blockOnMarker,
       },
     )
 

@@ -88,6 +88,8 @@ export function renderNestedMarkdownContent(
     blankLineBeforeBlocks?: boolean
     /** Indent nested content this many spaces, like the file did. Used only when it still nests. */
     indentWidth?: number | null
+    /** Indent the main content's later lines too, for a block on the prefix line like a fence. */
+    indentMainContent?: boolean
   },
 ): string {
   if (!node || !Array.isArray(node.content)) {
@@ -100,43 +102,46 @@ export function renderNestedMarkdownContent(
 
   const [content, ...children] = node.content
 
+  const indentLine = (line: string) => {
+    // 4 or more extra spaces would make an indented code block
+    const indentWidth = options?.indentWidth ?? 0
+    if (indentWidth >= columnWidth(prefix) && indentWidth < columnWidth(prefix) + 4) {
+      return ' '.repeat(indentWidth) + line
+    }
+
+    if (!options?.alignNestedToPrefix) {
+      return h.indent(line)
+    }
+
+    // Keep the configured indentation when it already reaches the
+    // content column, so `Markdown.indentation` still applies. A tab
+    // runs to the next tab stop, so it is wider than its one character.
+    const configured = h.indent('')
+    const prefixWidth = columnWidth(prefix)
+
+    return (columnWidth(configured) >= prefixWidth ? configured : ' '.repeat(prefixWidth)) + line
+  }
+  // Leave empty lines empty, so a blank line in a code block gets no trailing spaces
+  const indentLines = (text: string) =>
+    text
+      .split('\n')
+      .map(line => (line ? indentLine(line) : ''))
+      .join('\n')
+
   // Render the main content (typically a paragraph)
   const mainContent = h.renderChildren([content])
-  let output = `${prefix}${mainContent}`
+  const [mainFirstLine, ...mainOtherLines] = mainContent.split('\n')
+  let output =
+    options?.indentMainContent && mainOtherLines.length > 0
+      ? `${prefix}${mainFirstLine}\n${indentLines(mainOtherLines.join('\n'))}`
+      : `${prefix}${mainContent}`
 
   // Handle nested children with proper indentation
   if (children && children.length > 0) {
     children.forEach((child, index) => {
       const childContent = h.renderChild?.(child, index + 1) ?? h.renderChildren([child])
       if (childContent !== undefined && childContent !== null) {
-        // Split the child content by lines and indent each line
-        const indentLine = (line: string) => {
-          // 4 or more extra spaces would make an indented code block
-          const indentWidth = options?.indentWidth ?? 0
-          if (indentWidth >= columnWidth(prefix) && indentWidth < columnWidth(prefix) + 4) {
-            return ' '.repeat(indentWidth) + line
-          }
-
-          if (!options?.alignNestedToPrefix) {
-            return h.indent(line)
-          }
-
-          // Keep the configured indentation when it already reaches the
-          // content column, so `Markdown.indentation` still applies. A tab
-          // runs to the next tab stop, so it is wider than its one character.
-          const configured = h.indent('')
-          const prefixWidth = columnWidth(prefix)
-
-          return (
-            (columnWidth(configured) >= prefixWidth ? configured : ' '.repeat(prefixWidth)) + line
-          )
-        }
-
-        // Leave empty lines empty, so a blank line in a code block gets no trailing spaces
-        const indentedChild = childContent
-          .split('\n')
-          .map(line => (line ? indentLine(line) : ''))
-          .join('\n')
+        const indentedChild = indentLines(childContent)
 
         const blankLine =
           child.type === 'paragraph' ||

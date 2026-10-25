@@ -6,6 +6,7 @@ import type {
 } from '@tiptap/core'
 
 import { nestedIndentFromRaw } from '../helpers/nestedIndentFromRaw.js'
+import { startItemWithParagraph } from '../helpers/startItemWithParagraph.js'
 import {
   areOrderedListMarkersSequential,
   buildOrderedListAttrsFromMarker,
@@ -105,7 +106,8 @@ function splitItemContent(contentLines: string[]): {
       return
     }
 
-    if (paragraphLines.length > 0 && isBlockContentLine(line)) {
+    // A first line like `# Title` or a fence starts the item with that block, not a paragraph
+    if (isBlockContentLine(line)) {
       reachedBlockBoundary = true
       blockLines.push(line)
       return
@@ -417,15 +419,22 @@ export function parseListItems(
       content.push({ type: 'paragraph', content: [] })
     }
 
-    // Same rule as `ListItem.parseMarkdown`
+    // Same rules as `ListItem.parseMarkdown`
+    const { blockOnMarker, content: itemContent } = startItemWithParagraph(content, item.raw ?? '')
     const loose = item.tokens?.some(child => child.type === 'space')
-    const indent = /List$/.test(content[1]?.type ?? '') ? nestedIndentFromRaw(item.raw ?? '') : null
-    const attrs = { ...(loose ? { loose: true } : {}), ...(indent ? { indent } : {}) }
+    const indent = /List$/.test(itemContent[1]?.type ?? '')
+      ? nestedIndentFromRaw(item.raw ?? '')
+      : null
+    const attrs = {
+      ...(loose ? { loose: true } : {}),
+      ...(indent ? { indent } : {}),
+      ...(blockOnMarker ? { blockOnMarker } : {}),
+    }
 
     return {
       type: 'listItem',
       ...(Object.keys(attrs).length > 0 ? { attrs } : {}),
-      content,
+      content: itemContent,
     }
   })
 }

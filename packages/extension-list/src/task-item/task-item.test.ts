@@ -1030,7 +1030,7 @@ describe('TaskItem', () => {
           content: [
             {
               type: 'taskItem',
-              attrs: { checked: false },
+              attrs: { checked: false, loose: false },
               content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Item 1' }] }],
             },
           ],
@@ -1227,7 +1227,7 @@ describe('TaskItem', () => {
           content: [
             {
               type: 'taskItem',
-              attrs: { checked: false },
+              attrs: { checked: false, loose: false },
               content: [
                 { type: 'paragraph', content: [{ type: 'text', text: 'First para' }] },
                 { type: 'paragraph', content: [{ type: 'text', text: 'Second para' }] },
@@ -1286,17 +1286,17 @@ describe('TaskItem', () => {
           content: [
             {
               type: 'taskItem',
-              attrs: { checked: false },
+              attrs: { checked: false, loose: false },
               content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Parent' }] }],
             },
             {
               type: 'taskItem',
-              attrs: { checked: false },
+              attrs: { checked: false, loose: false },
               content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Child' }] }],
             },
             {
               type: 'taskItem',
-              attrs: { checked: false },
+              attrs: { checked: false, loose: false },
               content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Item 2' }] }],
             },
           ],

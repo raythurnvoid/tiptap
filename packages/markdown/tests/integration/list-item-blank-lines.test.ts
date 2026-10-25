@@ -1,7 +1,7 @@
 import { CodeBlock } from '@tiptap/extension-code-block'
 import { Document } from '@tiptap/extension-document'
 import { HorizontalRule } from '@tiptap/extension-horizontal-rule'
-import { BulletList, ListItem, OrderedList } from '@tiptap/extension-list'
+import { BulletList, ListItem, OrderedList, TaskItem, TaskList } from '@tiptap/extension-list'
 import { Paragraph } from '@tiptap/extension-paragraph'
 import { Text } from '@tiptap/extension-text'
 import { describe, expect, it } from 'vite-plus/test'
@@ -19,6 +19,8 @@ describe('Blank lines inside a list item', () => {
       BulletList,
       OrderedList,
       ListItem,
+      TaskList,
+      TaskItem,
     ],
   })
 
@@ -28,6 +30,8 @@ describe('Blank lines inside a list item', () => {
     ['a blank line inside a code block only', '- a\n  ```\n  x\n\n  y\n  ```'],
     ['a blank line before a rule', '- a\n\n  ---'],
     ['a blank line in an ordered item', '1. a\n\n   ```\n   x\n   ```'],
+    ['a blank line in a task item', '- [ ] a\n\n  ```\n  x\n  ```'],
+    ['no blank line in a task item', '- [ ] a\n  ```\n  x\n  ```'],
   ])('keeps %s', (_name, markdown) => {
     expect(markdownManager.serialize(markdownManager.parse(markdown))).toBe(markdown)
   })

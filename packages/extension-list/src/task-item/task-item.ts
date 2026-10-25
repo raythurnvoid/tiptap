@@ -120,6 +120,12 @@ export const TaskItem = Node.create<TaskItemOptions>({
           'data-checked': attributes.checked,
         }),
       },
+      // The Markdown file puts blank lines between the blocks inside this item
+      loose: {
+        default: false,
+        parseHTML: element => element.hasAttribute('data-loose'),
+        renderHTML: attributes => (attributes.loose ? { 'data-loose': '' } : {}),
+      },
     }
   },
 
@@ -176,14 +182,23 @@ export const TaskItem = Node.create<TaskItemOptions>({
       content.push(...nestedContent)
     }
 
-    return h.createNode('taskItem', { checked: token.checked || false }, content)
+    // Same rule as `ListItem.parseMarkdown`
+    const loose = token.nestedTokens?.some(child => child.type === 'space')
+
+    return h.createNode(
+      'taskItem',
+      { checked: token.checked || false, ...(loose ? { loose: true } : {}) },
+      content,
+    )
   },
 
   renderMarkdown: (node, h) => {
     const checkedChar = node.attrs?.checked ? 'x' : ' '
     const prefix = `- [${checkedChar}] `
 
-    return renderNestedMarkdownContent(node, h, prefix)
+    return renderNestedMarkdownContent(node, h, prefix, undefined, {
+      blankLineBeforeBlocks: node.attrs?.loose === true,
+    })
   },
 
   addExtensions() {

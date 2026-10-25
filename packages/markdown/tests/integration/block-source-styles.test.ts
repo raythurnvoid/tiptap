@@ -19,6 +19,7 @@ describe('Code block and heading styles', () => {
     ['a space before the language', '``` js\ncode\n```'],
     ['an indented block', 'a\n\n    code\n\n    more'],
     ['closing marks', '## a ##'],
+    ['an empty heading', 'a\n\n##\n\nb'],
     ['an underline', 'a\n='],
     ['an underline over text that starts like a list', '\\- a\n---'],
     ['a heading that starts a list item', '- # a\n- b'],

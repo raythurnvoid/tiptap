@@ -122,9 +122,13 @@ export const Heading = Node.create<HeadingOptions>({
   renderMarkdown: (node, h) => {
     const level = node.attrs?.level ? parseInt(node.attrs.level as string, 10) : 1
     const headingChars = '#'.repeat(level)
+    const closing = /^[ \t]+#+$/.test(node.attrs?.markdownClosing ?? '')
+      ? node.attrs.markdownClosing
+      : ''
 
-    if (!node.content) {
-      return ''
+    // An empty heading is its `#` marks alone
+    if (!node.content?.length) {
+      return `${headingChars}${closing}`
     }
 
     // Use current context for proper joining/spacing
@@ -132,9 +136,6 @@ export const Heading = Node.create<HeadingOptions>({
     // A `#` run at the end of a `#` heading reads as its closing marks, so `Issue #` would lose the `#`
     const escapeClosingHashes = (text: string) => text.replace(/(^|[ \t])(#+[ \t]*)$/, '$1\\$2')
     const underline = node.attrs?.markdownUnderline
-    const closing = /^[ \t]+#+$/.test(node.attrs?.markdownClosing ?? '')
-      ? node.attrs.markdownClosing
-      : ''
 
     // A `#` heading is one line. Only levels 1 and 2 have the underlined form that can hold more lines.
     if (level <= 2 && (content.includes('\n') || underline)) {

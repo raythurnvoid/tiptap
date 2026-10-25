@@ -238,6 +238,26 @@ function linkTagFits(tag: string, href: string, title: string) {
   return attributes.get('href') === href && (attributes.get('title') ?? '') === title
 }
 
+type MarkdownDestination = { source: string; href: string; title: string | null }
+
+// Pasted HTML can hold any value here
+function parseMarkdownDestination(value: string | null): MarkdownDestination | null {
+  if (!value) {
+    return null
+  }
+
+  try {
+    const destination = JSON.parse(decodeURIComponent(value))
+    return typeof destination?.source === 'string' &&
+      typeof destination.href === 'string' &&
+      (destination.title === null || typeof destination.title === 'string')
+      ? { source: destination.source, href: destination.href, title: destination.title }
+      : null
+  } catch {
+    return null
+  }
+}
+
 /**
  * This extension allows you to create links.
  * @see https://www.tiptap.dev/api/marks/link
@@ -354,6 +374,20 @@ export const Link = Mark.create<LinkOptions>({
             ? { 'data-markdown-autolink': attributes.markdownAutolink }
             : {},
       },
+      // How Markdown wrote the address and title, like `<a b> 'Title'`, with the address and title they gave
+      markdownDestination: {
+        default: null,
+        parseHTML: element =>
+          parseMarkdownDestination(element.getAttribute('data-markdown-destination')),
+        renderHTML: attributes =>
+          attributes.markdownDestination
+            ? {
+                'data-markdown-destination': encodeURIComponent(
+                  JSON.stringify(attributes.markdownDestination),
+                ),
+              }
+            : {},
+      },
       // The `<a …>` tag the file wrote
       markdownSyntax: markdownSyntaxAttribute(),
     }
@@ -430,6 +464,12 @@ export const Link = Mark.create<LinkOptions>({
     const tag = node.attrs?.markdownSyntax
     if (typeof tag === 'string' && linkTagFits(tag, href, title)) {
       return `${tag}${text}</${tag.slice(1, 2)}>`
+    }
+
+    // An edited address or title no longer matches what the file wrote
+    const destination: MarkdownDestination | null = node.attrs?.markdownDestination ?? null
+    if (destination && destination.href === href && destination.title === (title || null)) {
+      return `[${text}](${destination.source})`
     }
 
     if (!title) {

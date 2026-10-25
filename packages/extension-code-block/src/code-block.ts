@@ -132,7 +132,7 @@ export const CodeBlock = Node.create<CodeBlockOptions>({
         },
         rendered: false,
       },
-      // How the Markdown file opened this block, like `~~~` or `indented`. Empty means ```.
+      // How the Markdown file opened this block, like `~~~`, an indent and ``` or `indented`. Empty means ```.
       markdownFence: {
         default: null,
         parseHTML: element => element.getAttribute('data-markdown-fence'),
@@ -177,16 +177,12 @@ export const CodeBlock = Node.create<CodeBlockOptions>({
   markdownTokenName: 'code',
 
   parseMarkdown: (token, helpers) => {
-    if (
-      token.raw?.startsWith('```') === false &&
-      token.raw?.startsWith('~~~') === false &&
-      token.codeBlockStyle !== 'indented'
-    ) {
+    const opening = /^( {0,3})(`{3,}|~{3,})([ \t]*)/.exec(token.raw ?? '')
+    if (!opening && token.codeBlockStyle !== 'indented') {
       return []
     }
 
-    const opening = /^ {0,3}(`{3,}|~{3,})([ \t]*)/.exec(token.raw ?? '')
-    const fence = opening ? opening[1] + (token.lang ? opening[2] : '') : null
+    const fence = opening ? opening[1] + opening[2] + (token.lang ? opening[3] : '') : null
     const markdownFence = token.codeBlockStyle === 'indented' ? 'indented' : fence
 
     return helpers.createNode(
@@ -220,8 +216,10 @@ export const CodeBlock = Node.create<CodeBlockOptions>({
         .join('\n')
     }
 
-    const sourceFence = typeof source === 'string' ? /^(`{3,}|~{3,})([ \t]*)$/.exec(source) : null
-    const fenceCharacter = sourceFence?.[1][0] ?? '`'
+    const sourceFence =
+      typeof source === 'string' ? /^( {0,3})(`{3,}|~{3,})([ \t]*)$/.exec(source) : null
+    const fenceIndent = sourceFence?.[1] ?? ''
+    const fenceCharacter = sourceFence?.[2][0] ?? '`'
     // A backtick in the info string makes a backtick opening line plain text, not a fence.
     const language =
       fenceCharacter === '`' && node.attrs?.language?.includes('`')
@@ -231,19 +229,26 @@ export const CodeBlock = Node.create<CodeBlockOptions>({
     // the code closes the block early, and the rest of the code turns into Markdown.
     const runs = code.match(fenceCharacter === '`' ? /`+/g : /~+/g) ?? []
     const longestRun = Math.max(0, ...runs.map(run => run.length))
-    const fence = fenceCharacter.repeat(Math.max(sourceFence?.[1].length ?? 3, longestRun + 1))
+    const fence = fenceCharacter.repeat(Math.max(sourceFence?.[2].length ?? 3, longestRun + 1))
     // Without a language, the meta would read as the language
     const meta =
       language && /^[ \t][^\n]*$/.test(node.attrs?.markdownMeta ?? '')
         ? node.attrs.markdownMeta
         : ''
     const info = fenceCharacter === '`' && meta.includes('`') ? language : `${language}${meta}`
-    const opening = `${fence}${language ? (sourceFence?.[2] ?? '') : ''}${info}`
+    const opening = `${fence}${language ? (sourceFence?.[3] ?? '') : ''}${info}`
+
+    // Marked takes the fence's indent off each code line again, but only under a backtick fence
+    const codeIndent = fenceCharacter === '`' ? fenceIndent : ''
+    const indentedCode = code
+      .split('\n')
+      .map(line => (line ? `${codeIndent}${line}` : line))
+      .join('\n')
 
     if (!node.content) {
-      output = `${opening}\n\n${fence}`
+      output = `${fenceIndent}${opening}\n\n${fenceIndent}${fence}`
     } else {
-      const lines = [opening, code, fence]
+      const lines = [`${fenceIndent}${opening}`, indentedCode, `${fenceIndent}${fence}`]
       output = lines.join('\n')
     }
 

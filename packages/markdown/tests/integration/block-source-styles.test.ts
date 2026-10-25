@@ -28,6 +28,8 @@ describe('Code block and heading styles', () => {
     ['a `~~~` fence', '~~~js\ncode\n~~~'],
     ['a longer fence', '````\ncode\n````'],
     ['a space before the language', '``` js\ncode\n```'],
+    ['an indented fence', '  ```js\n  code\n\n  more\n  ```'],
+    ['an indented `~~~` fence', ' ~~~\n code\n ~~~'],
     ['an indented block', 'a\n\n    code\n\n    more'],
     ['closing marks', '## a ##'],
     ['an empty heading', 'a\n\n##\n\nb'],

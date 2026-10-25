@@ -29,6 +29,13 @@ describe('List styles', () => {
     ['a list nested with 4 spaces', '- a\n    - b\n        - c'],
     ['an ordered list nested with 4 spaces', '1. a\n    1. b'],
     ['a paragraph indented 4 spaces in an item', '- a\n\n    more'],
+    ['a wrapped line indented 4 spaces in an item', '- a\n    b'],
+    ['a wrapped line indented 4 spaces in an ordered item', '1. a\n    b'],
+    ['a wrapped line in a task item', '- [ ] a\n  b'],
+    ['a wrapped line indented 6 spaces in a task item', '- [ ] a\n      b'],
+    ['a wrapped line before a nested task item', '- [ ] a\n  b\n  - [ ] c'],
+    ['a wrapped line in a nested task item', '- [ ] a\n  - [ ] b\n    c'],
+    ['a wrapped line before a list nested with 4 spaces', '- a\n  b\n    - c'],
   ])('keeps %s', (_name, markdown) => {
     expect(markdownManager.serialize(markdownManager.parse(markdown))).toBe(markdown)
   })

@@ -24,6 +24,7 @@ describe('Text escapes', () => {
     '[TODO] fix login',
     '100*2 = 200',
     '<3 and </3',
+    'Version\n2. x',
   ])('writes %j without escapes it does not need', value => {
     expect(markdownManager.serialize(paragraph(text(value)))).toBe(value)
   })
@@ -32,6 +33,7 @@ describe('Text escapes', () => {
     ['*a*', '\\*a\\*'],
     ['[a](b)', '\\[a\\](b)'],
     ['<b>x</b>', '&lt;b>x&lt;/b>'],
+    ['Version\n1. x', 'Version\n1\\. x'],
   ])('escapes %j where it would read as Markdown', (value, markdown) => {
     expect(markdownManager.serialize(paragraph(text(value)))).toBe(markdown)
   })
@@ -56,5 +58,24 @@ describe('Text escapes', () => {
     }
 
     expect(markdownManager.serialize(doc)).toBe('- \\[ ] a')
+  })
+
+  it('escapes a later line like "2." in a list item, where it would start a list', () => {
+    const doc = {
+      type: 'doc',
+      content: [
+        {
+          type: 'bulletList',
+          content: [
+            {
+              type: 'listItem',
+              content: [{ type: 'paragraph', content: [text('Version\n2. x')] }],
+            },
+          ],
+        },
+      ],
+    }
+
+    expect(markdownManager.serialize(doc)).toBe('- Version\n  2\\. x')
   })
 })

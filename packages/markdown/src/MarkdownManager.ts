@@ -1328,6 +1328,11 @@ export class MarkdownManager {
           return match
         }
 
+        // The caller checks that the whole block still reads the same. A marker like `2.` cannot interrupt a paragraph.
+        if (this.escapeMode === 'relaxed' && offset > 0) {
+          return match
+        }
+
         // In `1.` the dot is the marker
         return /\d/.test(marker)
           ? `${indent}${marker.slice(0, -1)}\\${marker.slice(-1)}`
@@ -1338,9 +1343,9 @@ export class MarkdownManager {
 
   /**
    * Tell if two Markdown texts parse to the same tokens. Escaped and plain text
-   * count as the same text.
+   * count as the same text. `inList` reads them inside a list item.
    */
-  private readsTheSame(first: string, second: string): boolean {
+  private readsTheSame(first: string, second: string, inList: boolean): boolean {
     if (first === second) {
       return true
     }
@@ -1367,7 +1372,11 @@ export class MarkdownManager {
         return Array.isArray(value) ? joinText(value) : value
       })
 
-    return shape(first) === shape(second)
+    // Inside a list item, a later line like `2. x` starts a list
+    const inListItem = (markdown: string) =>
+      inList ? `- ${markdown.replaceAll('\n', '\n  ')}` : markdown
+
+    return shape(inListItem(first)) === shape(inListItem(second))
   }
 
   renderNodeToMarkdown(
@@ -1480,13 +1489,14 @@ export class MarkdownManager {
       this.escapeMode = 'all'
       try {
         const escaped = this.renderNodesWithMarkBoundaries(nodes, parentNode, separator, level)
-        if (!/\\[*_~=`[\]]|&lt;/.test(escaped)) {
+        if (!/\\[*_~=`[\]]|&lt;|\n[ \t]*\d*\\/.test(escaped)) {
           return escaped
         }
 
         this.escapeMode = 'relaxed'
         const relaxed = this.renderNodesWithMarkBoundaries(nodes, parentNode, separator, level)
-        return this.readsTheSame(escaped, relaxed) ? relaxed : escaped
+        // Only lists raise the level
+        return this.readsTheSame(escaped, relaxed, level > 0) ? relaxed : escaped
       } finally {
         this.escapeMode = null
       }

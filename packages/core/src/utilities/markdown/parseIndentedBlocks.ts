@@ -35,6 +35,11 @@ export interface BlockParserConfig {
    * This allows recursive parsing of the same block type.
    */
   customNestedParser?: (dedentedContent: string) => any[] | undefined
+  /**
+   * Whether an indented line right under the item continues the item's text, like a wrapped
+   * paragraph line. Such lines join `mainContent` instead of the nested content.
+   */
+  isTextContinuation?: (line: string) => boolean
 }
 
 /**
@@ -111,12 +116,26 @@ export function parseIndentedBlocks(
     }
 
     const itemData = config.extractItemData(itemMatch)
-    const { indentLevel, mainContent } = itemData
+    const { indentLevel } = itemData
     totalRaw = `${totalRaw}${currentLine}\n`
+    i += 1
+
+    // Keep the spaces past the item's text column, like a paragraph line does
+    while (config.isTextContinuation && i < lines.length) {
+      const line = lines[i]
+      const lineIndent = line.match(/^\s*/)?.[0].length ?? 0
+      if (line.trim() === '' || lineIndent <= indentLevel || !config.isTextContinuation(line)) {
+        break
+      }
+
+      const textColumn = Math.min(indentLevel + baseIndentSize, lineIndent)
+      itemData.mainContent = `${itemData.mainContent}\n${line.slice(textColumn)}`
+      totalRaw = `${totalRaw}${line}\n`
+      i += 1
+    }
 
     // Collect content for this item (including nested items)
-    const itemContent = [mainContent] // Start with the main text
-    i += 1
+    const itemContent = [itemData.mainContent] // Start with the main text
 
     // Look ahead for nested content (indented more than current item)
     while (i < lines.length) {

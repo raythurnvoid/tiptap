@@ -88,7 +88,7 @@ export function renderNestedMarkdownContent(
     blankLineBeforeBlocks?: boolean
     /** Indent nested content this many spaces, like the file did. Used only when it still nests. */
     indentWidth?: number | null
-    /** Indent the main content's later lines too, for a block on the prefix line like a fence. */
+    /** Indent the main content's later lines too, like the wrapped lines of a list item's text. */
     indentMainContent?: boolean
   },
 ): string {
@@ -102,9 +102,8 @@ export function renderNestedMarkdownContent(
 
   const [content, ...children] = node.content
 
-  const indentLine = (line: string) => {
+  const indentLine = (line: string, indentWidth = options?.indentWidth ?? 0) => {
     // 4 or more extra spaces would make an indented code block
-    const indentWidth = options?.indentWidth ?? 0
     if (indentWidth >= columnWidth(prefix) && indentWidth < columnWidth(prefix) + 4) {
       return ' '.repeat(indentWidth) + line
     }
@@ -128,13 +127,16 @@ export function renderNestedMarkdownContent(
       .map(line => (line ? indentLine(line) : ''))
       .join('\n')
 
-  // Render the main content (typically a paragraph)
+  // Render the main content (typically a paragraph). Its later lines start where nested blocks
+  // start, because the reader counts their own spaces from there. The kept indent of a nested
+  // list does not apply to them.
   const mainContent = h.renderChildren([content])
-  const [mainFirstLine, ...mainOtherLines] = mainContent.split('\n')
-  let output =
-    options?.indentMainContent && mainOtherLines.length > 0
-      ? `${prefix}${mainFirstLine}\n${indentLines(mainOtherLines.join('\n'))}`
-      : `${prefix}${mainContent}`
+  let output = options?.indentMainContent
+    ? `${prefix}${mainContent
+        .split('\n')
+        .map((line, index) => (index > 0 && line ? indentLine(line, 0) : line))
+        .join('\n')}`
+    : `${prefix}${mainContent}`
 
   // Handle nested children with proper indentation
   if (children && children.length > 0) {

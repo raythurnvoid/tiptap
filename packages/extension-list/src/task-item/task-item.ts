@@ -198,6 +198,7 @@ export const TaskItem = Node.create<TaskItemOptions>({
 
     return renderNestedMarkdownContent(node, h, prefix, undefined, {
       blankLineBeforeBlocks: node.attrs?.loose === true,
+      indentMainContent: true,
     })
   },
 

@@ -2,6 +2,10 @@ import { mergeAttributes, Node, parseIndentedBlocks } from '@tiptap/core'
 
 import { bulletFromMarker } from '../helpers/bulletFromMarker.js'
 
+// A line that starts a block ends the item's text: a list item, heading, fence, quote, HTML, rule or heading underline
+const BLOCK_START_REGEX =
+  /^\s*(?:[-+*](?:\s|$)|\d{1,9}[.)](?:\s|$)|#{1,6}(?:\s|$)|`{3,}|~{3,}|>|<|\$\$|[-=]+\s*$|(?:\*[ \t]*){3,}$|(?:_[ \t]*){3,}$)/
+
 export interface TaskListOptions {
   /**
    * The node type name for a task item.
@@ -123,6 +127,7 @@ export const TaskList = Node.create<TaskListOptions>({
             }),
             // Allow recursive nesting
             customNestedParser: parseTaskListContent,
+            isTextContinuation: line => !BLOCK_START_REGEX.test(line),
           },
           lexer,
         )
@@ -170,6 +175,7 @@ export const TaskList = Node.create<TaskListOptions>({
           }),
           // Use the recursive parser for nested content
           customNestedParser: parseTaskListContent,
+          isTextContinuation: line => !BLOCK_START_REGEX.test(line),
         },
         lexer,
       )

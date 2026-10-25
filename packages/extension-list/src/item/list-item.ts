@@ -238,7 +238,7 @@ export const ListItem = Node.create<ListItemOptions>({
         alignNestedToPrefix: ctx?.parentType === 'orderedList',
         blankLineBeforeBlocks: node.attrs?.loose === true,
         indentWidth: node.attrs?.indent,
-        indentMainContent: blockOnMarker,
+        indentMainContent: true,
       },
     )
 

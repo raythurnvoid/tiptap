@@ -99,4 +99,19 @@ describe('markdownSyntax', () => {
       `${tag}a</a> [b](https://f.com "T") [c](https://e.com)`,
     )
   })
+
+  it.each([
+    ['a quote', `[a](https://e.com 'say "hi"')`, '[a](https://e.com "say \\"hi\\"")'],
+    [
+      'a backslash before punctuation',
+      '[a](https://e.com "a\\\\*")',
+      '[a](https://e.com "a\\\\*")',
+    ],
+    ['a backslash before a letter', '[a](https://e.com "a\\b")', '[a](https://e.com "a\\b")'],
+  ])('keeps the link title with %s', (_name, markdown, expected) => {
+    const output = markdownManager.serialize(markdownManager.parse(markdown))
+
+    expect(output).toBe(expected)
+    expect(markdownManager.parse(output)).toEqual(markdownManager.parse(markdown))
+  })
 })

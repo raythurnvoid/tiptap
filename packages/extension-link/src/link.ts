@@ -432,7 +432,13 @@ export const Link = Mark.create<LinkOptions>({
       return `${tag}${text}</${tag.slice(1, 2)}>`
     }
 
-    return title ? `[${text}](${href} "${title}")` : `[${text}](${href})`
+    if (!title) {
+      return `[${text}](${href})`
+    }
+
+    // A `"`, or a `\` that would escape the next character, would end or change the title
+    const escapedTitle = title.replace(/"|\\(?=[!-/:-@[-`{-~]|$)/g, '\\$&')
+    return `[${text}](${href} "${escapedTitle}")`
   },
 
   markdownOptions: {

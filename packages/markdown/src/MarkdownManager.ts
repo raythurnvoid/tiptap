@@ -39,6 +39,8 @@ import { splitCodeMarkRuns } from './utils/splitCodeMarkRuns.js'
 export class MarkdownManager {
   private markedInstance: typeof marked
   private activeParseLexer: Lexer | null = null
+  /** How a text block being written escapes its text, see `renderNodesWithMarkBoundaries` */
+  private escapeMode: 'all' | 'relaxed' | null = null
   private registry: Map<string, MarkdownExtensionSpec[]>
   private nodeTypeRegistry: Map<string, MarkdownExtensionSpec[]>
   /**
@@ -1226,9 +1228,10 @@ export class MarkdownManager {
    * at the start of a line, and `escapeBlockStarts` handles that.
    */
   private escapeHtml(text: string): string {
-    return text
-      .replace(/&(?=#?\w+;)/g, '&amp;')
-      .replace(/<(?=[A-Za-z/!?]|[^\s<>]*(?:>|$))/g, '&lt;')
+    const escaped = text.replace(/&(?=#?\w+;)/g, '&amp;')
+    return this.escapeMode === 'relaxed'
+      ? escaped
+      : escaped.replace(/<(?=[A-Za-z/!?]|[^\s<>]*(?:>|$))/g, '&lt;')
   }
 
   /**
@@ -1271,6 +1274,15 @@ export class MarkdownManager {
       /(\[\^[A-Za-z0-9-]+(?:_[A-Za-z0-9-]+)*\])(?![([:])|\*+|_+|~+|=+|[\\`[\]]/g,
       (match, footnoteReference: string | undefined, offset: number) => {
         if (footnoteReference) {
+          return match
+        }
+
+        // The caller checks that the whole block still reads the same. A `[ ]` could still start a task item.
+        if (
+          this.escapeMode === 'relaxed' &&
+          match !== '\\' &&
+          !(offset === 0 && /^\[[ xX]\]/.test(text))
+        ) {
           return match
         }
 
@@ -1321,6 +1333,40 @@ export class MarkdownManager {
           : `${indent}\\${marker}`
       },
     )
+  }
+
+  /**
+   * Tell if two Markdown texts parse to the same tokens. Escaped and plain text
+   * count as the same text.
+   */
+  private readsTheSame(first: string, second: string): boolean {
+    if (first === second) {
+      return true
+    }
+
+    const joinText = (tokens: unknown[]) =>
+      tokens.reduce<unknown[]>((joined, token: any) => {
+        const isText = token?.type === 'escape' || (token?.type === 'text' && !token.tokens)
+        // `&lt;` in text shows a `<`, like a `<` that starts no tag
+        const text = isText ? token.text.replaceAll('&lt;', '<') : null
+        const last = joined.length - 1
+        if (isText && typeof joined[last] === 'string') {
+          joined[last] += text
+        } else {
+          joined.push(isText ? text : token)
+        }
+        return joined
+      }, [])
+    const shape = (markdown: string) =>
+      JSON.stringify(this.createLexer().lex(markdown), function (this: any, key, value) {
+        // `raw` is the source, and so is `text` next to parsed `tokens`
+        if (key === 'raw' || (key === 'text' && this.tokens)) {
+          return undefined
+        }
+        return Array.isArray(value) ? joinText(value) : value
+      })
+
+    return shape(first) === shape(second)
   }
 
   renderNodeToMarkdown(
@@ -1424,6 +1470,27 @@ export class MarkdownManager {
     separator = '',
     level = 0,
   ): string {
+    // Each text node is escaped without seeing the rest of the block, so `__dirname` got escapes it does
+    // not need. Write the block again without them, and keep that when it reads back the same.
+    if (
+      this.escapeMode === null &&
+      (parentNode?.type === 'paragraph' || parentNode?.type === 'heading')
+    ) {
+      this.escapeMode = 'all'
+      try {
+        const escaped = this.renderNodesWithMarkBoundaries(nodes, parentNode, separator, level)
+        if (!/\\[*_~=`[\]]|&lt;/.test(escaped)) {
+          return escaped
+        }
+
+        this.escapeMode = 'relaxed'
+        const relaxed = this.renderNodesWithMarkBoundaries(nodes, parentNode, separator, level)
+        return this.readsTheSame(escaped, relaxed) ? relaxed : escaped
+      } finally {
+        this.escapeMode = null
+      }
+    }
+
     const result: string[] = []
     const activeMarks: Map<string, any> = new Map()
     const reopenWithHtmlOnNextOpen = new Set<string>()

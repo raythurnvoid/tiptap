@@ -450,7 +450,7 @@ describe('Markdown Conversion Tests', () => {
 
       const markdown = markdownManager.serialize(json)
       expect(markdown).toBe(
-        'a < b, a <= b, &lt;x, a&lt;b, &amp;copy;, &amp;#169;, R&D, x>\n\n\\> not a quote',
+        'a < b, a <= b, <x, a<b, &amp;copy;, &amp;#169;, R&D, x>\n\n\\> not a quote',
       )
       const paragraphs = markdownManager.parse(markdown).content
       expect(paragraphs.map(node => node.content.map(child => child.text).join(''))).toEqual([
@@ -773,19 +773,19 @@ describe('Markdown Conversion Tests', () => {
         expect(markdown).toBe('\\\\')
       })
 
-      it('should escape brackets in text nodes', () => {
+      it('should escape brackets that would read as a link', () => {
         const json = {
           type: 'doc',
           content: [
             {
               type: 'paragraph',
-              content: [{ type: 'text', text: '[bracket]' }],
+              content: [{ type: 'text', text: '[bracket](x)' }],
             },
           ],
         }
 
         const markdown = markdownManager.serialize(json)
-        expect(markdown).toBe('\\[bracket\\]')
+        expect(markdown).toBe('\\[bracket\\](x)')
       })
 
       it('should escape tildes in text nodes', () => {

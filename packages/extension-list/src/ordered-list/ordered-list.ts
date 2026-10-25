@@ -155,13 +155,20 @@ export const OrderedList = Node.create<OrderedListOptions>({
       delimiter: {
         default: null,
         parseHTML: element => (element.getAttribute('data-delimiter') === ')' ? ')' : null),
-        renderHTML: attributes => (attributes.delimiter ? { 'data-delimiter': attributes.delimiter } : {}),
+        renderHTML: attributes =>
+          attributes.delimiter ? { 'data-delimiter': attributes.delimiter } : {},
       },
       // Keep the blank lines between the items from Markdown
       loose: {
         default: false,
         parseHTML: element => element.hasAttribute('data-loose'),
         renderHTML: attributes => (attributes.loose ? { 'data-loose': '' } : {}),
+      },
+      // Keep a Markdown list that gives every item the same number, like `1.` `1.` `1.`
+      sameNumber: {
+        default: false,
+        parseHTML: element => element.hasAttribute('data-same-number'),
+        renderHTML: attributes => (attributes.sameNumber ? { 'data-same-number': '' } : {}),
       },
     }
   },
@@ -214,6 +221,11 @@ export const OrderedList = Node.create<OrderedListOptions>({
 
     if (/^\s*\w+\)/.test(token.raw ?? '')) {
       attrs.delimiter = ')'
+    }
+
+    const numbers = (token.items ?? []).map(item => /^\s*(\d+)/.exec(item.raw ?? '')?.[1])
+    if (numbers.length > 1 && numbers.every(number => Number(number) === startValue)) {
+      attrs.sameNumber = true
     }
 
     if (Object.keys(attrs).length > 0) {

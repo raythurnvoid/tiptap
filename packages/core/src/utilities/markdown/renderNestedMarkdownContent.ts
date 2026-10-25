@@ -86,6 +86,8 @@ export function renderNestedMarkdownContent(
     alignNestedToPrefix?: boolean
     /** Put a blank line before each nested block but a list, like the file did. */
     blankLineBeforeBlocks?: boolean
+    /** Indent nested content this many spaces, like the file did. Used only when it still nests. */
+    indentWidth?: number | null
   },
 ): string {
   if (!node || !Array.isArray(node.content)) {
@@ -109,6 +111,12 @@ export function renderNestedMarkdownContent(
       if (childContent !== undefined && childContent !== null) {
         // Split the child content by lines and indent each line
         const indentLine = (line: string) => {
+          // 4 or more extra spaces would make an indented code block
+          const indentWidth = options?.indentWidth ?? 0
+          if (indentWidth >= columnWidth(prefix) && indentWidth < columnWidth(prefix) + 4) {
+            return ' '.repeat(indentWidth) + line
+          }
+
           if (!options?.alignNestedToPrefix) {
             return h.indent(line)
           }

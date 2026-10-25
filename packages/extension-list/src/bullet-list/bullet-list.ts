@@ -1,5 +1,7 @@
 import { mergeAttributes, Node, wrappingInputRule } from '@tiptap/core'
 
+import { bulletFromMarker } from '../helpers/bulletFromMarker.js'
+
 const ListItemName = 'listItem'
 const TextStyleName = 'textStyle'
 
@@ -48,10 +50,6 @@ declare module '@tiptap/core' {
  * Matches a bullet list to a dash or asterisk.
  */
 export const bulletListInputRegex = /^\s*([-+*])\s$/
-
-function bulletFromMarker(marker: string) {
-  return marker === '*' || marker === '+' ? marker : null
-}
 
 /**
  * This extension allows you to create bullet lists.

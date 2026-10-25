@@ -5,6 +5,7 @@ import type {
   MarkdownToken,
 } from '@tiptap/core'
 
+import { nestedIndentFromRaw } from '../helpers/nestedIndentFromRaw.js'
 import {
   areOrderedListMarkersSequential,
   buildOrderedListAttrsFromMarker,
@@ -25,6 +26,9 @@ export { ORDERED_LIST_MARKER_PATTERN }
 export const ORDERED_LIST_ITEM_REGEX = new RegExp(
   `^(\\s*)(${ORDERED_LIST_MARKER_PATTERN})([.)])\\s+(.*)$`,
 )
+
+/** An empty numbered item, like `2.`. It only continues a list, as it cannot start one. */
+const EMPTY_ORDERED_LIST_ITEM_REGEX = /^(\s*)(\d+)([.)])[ \t]*$/
 
 /**
  * Matches any line that starts with whitespace (indented content).
@@ -131,13 +135,15 @@ export function collectOrderedListItems(lines: string[]): [OrderedListItem[], nu
 
   while (currentLineIndex < lines.length) {
     const line = lines[currentLineIndex]
-    const match = line.match(ORDERED_LIST_ITEM_REGEX)
+    const match =
+      line.match(ORDERED_LIST_ITEM_REGEX) ??
+      (listItems.length > 0 ? line.match(EMPTY_ORDERED_LIST_ITEM_REGEX) : null)
 
     if (!match) {
       break
     }
 
-    const [, indent, marker, _separator, content] = match
+    const [, indent, marker, _separator, content = ''] = match
     const indentLevel = indent.length
     const number = parseInt(marker, 10)
 
@@ -155,7 +161,8 @@ export function collectOrderedListItems(lines: string[]): [OrderedListItem[], nu
     // Collect continuation lines for this item (but NOT nested list items)
     while (nextLineIndex < lines.length) {
       const nextLine = lines[nextLineIndex]
-      const nextMatch = nextLine.match(ORDERED_LIST_ITEM_REGEX)
+      const nextMatch =
+        nextLine.match(ORDERED_LIST_ITEM_REGEX) ?? nextLine.match(EMPTY_ORDERED_LIST_ITEM_REGEX)
 
       // If it's another list item (nested or not), stop collecting
       if (nextMatch) {
@@ -341,7 +348,8 @@ export function buildNestedStructure(
 
       result.push({
         type: 'list_item',
-        raw: item.raw,
+        // Include the nested items, so the item keeps how far the file indented them
+        raw: [item.raw, ...nestedItems.map(nestedItem => nestedItem.raw)].join('\n'),
         tokens,
       })
 
@@ -404,12 +412,19 @@ export function parseListItems(
       })
     }
 
+    // An empty item like `2.` still needs its paragraph
+    if (content.length === 0) {
+      content.push({ type: 'paragraph', content: [] })
+    }
+
     // Same rule as `ListItem.parseMarkdown`
     const loose = item.tokens?.some(child => child.type === 'space')
+    const indent = /List$/.test(content[1]?.type ?? '') ? nestedIndentFromRaw(item.raw ?? '') : null
+    const attrs = { ...(loose ? { loose: true } : {}), ...(indent ? { indent } : {}) }
 
     return {
       type: 'listItem',
-      ...(loose ? { attrs: { loose: true } } : {}),
+      ...(Object.keys(attrs).length > 0 ? { attrs } : {}),
       content,
     }
   })

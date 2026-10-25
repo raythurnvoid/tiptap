@@ -653,11 +653,12 @@ describe('TaskItem', () => {
             type: null,
             delimiter: null,
             loose: false,
+            sameNumber: false,
           },
           content: [
             {
               type: 'listItem',
-              attrs: { loose: false },
+              attrs: { loose: false, indent: null },
               content: [
                 {
                   type: 'paragraph',
@@ -1027,6 +1028,7 @@ describe('TaskItem', () => {
       content: [
         {
           type: 'taskList',
+          attrs: { bullet: null },
           content: [
             {
               type: 'taskItem',
@@ -1075,7 +1077,7 @@ describe('TaskItem', () => {
           content: [
             {
               type: 'listItem',
-              attrs: { loose: false },
+              attrs: { loose: false, indent: null },
               content: [
                 {
                   type: 'paragraph',
@@ -1224,6 +1226,7 @@ describe('TaskItem', () => {
       content: [
         {
           type: 'taskList',
+          attrs: { bullet: null },
           content: [
             {
               type: 'taskItem',
@@ -1283,6 +1286,7 @@ describe('TaskItem', () => {
       content: [
         {
           type: 'taskList',
+          attrs: { bullet: null },
           content: [
             {
               type: 'taskItem',

@@ -1,5 +1,7 @@
 import { mergeAttributes, Node, parseIndentedBlocks } from '@tiptap/core'
 
+import { bulletFromMarker } from '../helpers/bulletFromMarker.js'
+
 export interface TaskListOptions {
   /**
    * The node type name for a task item.
@@ -57,6 +59,17 @@ export const TaskList = Node.create<TaskListOptions>({
     ]
   },
 
+  addAttributes() {
+    return {
+      // Keep the `*` or `+` marker from Markdown. `null` saves as `-`.
+      bullet: {
+        default: null,
+        parseHTML: element => bulletFromMarker(element.getAttribute('data-bullet') ?? ''),
+        renderHTML: attributes => (attributes.bullet ? { 'data-bullet': attributes.bullet } : {}),
+      },
+    }
+  },
+
   renderHTML({ HTMLAttributes }) {
     return [
       'ul',
@@ -66,7 +79,8 @@ export const TaskList = Node.create<TaskListOptions>({
   },
 
   parseMarkdown: (token, h) => {
-    return h.createNode('taskList', {}, h.parseChildren(token.items || []))
+    const bullet = bulletFromMarker(token.raw?.trimStart().charAt(0) ?? '')
+    return h.createNode('taskList', bullet ? { bullet } : {}, h.parseChildren(token.items || []))
   },
 
   renderMarkdown: (node, h) => {

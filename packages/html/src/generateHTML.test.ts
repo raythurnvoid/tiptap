@@ -158,7 +158,7 @@ describe('generateHTML', () => {
           content: [
             {
               type: 'listItem',
-              attrs: { loose: false },
+              attrs: { loose: false, indent: null },
               content: [
                 {
                   type: 'paragraph',
@@ -173,7 +173,7 @@ describe('generateHTML', () => {
             },
             {
               type: 'listItem',
-              attrs: { loose: false },
+              attrs: { loose: false, indent: null },
               content: [
                 {
                   type: 'paragraph',

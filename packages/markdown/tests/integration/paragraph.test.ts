@@ -116,7 +116,7 @@ describe('Paragraph Markdown Rendering', () => {
       }
 
       const markdown = markdownManager.serialize(doc)
-      expect(markdown).toBe('- ')
+      expect(markdown).toBe('-')
     })
 
     it('should not emit &nbsp; for an empty paragraph inside an ordered list item', () => {
@@ -136,7 +136,7 @@ describe('Paragraph Markdown Rendering', () => {
       }
 
       const markdown = markdownManager.serialize(doc)
-      expect(markdown).toBe('1. ')
+      expect(markdown).toBe('1.')
     })
 
     it('should keep the first empty paragraph inside a blockquote empty', () => {

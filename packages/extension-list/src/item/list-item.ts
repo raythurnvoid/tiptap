@@ -2,6 +2,7 @@ import type { JSONContent, MarkdownParseHelpers, MarkdownToken } from '@tiptap/c
 import { mergeAttributes, Node, renderNestedMarkdownContent } from '@tiptap/core'
 
 import { createBranchingListDeleteKeymap } from '../helpers/createBranchingListDeleteKeymap.js'
+import { nestedIndentFromRaw } from '../helpers/nestedIndentFromRaw.js'
 
 import { getListMarker } from '../ordered-list/roman.js'
 
@@ -80,6 +81,14 @@ export const ListItem = Node.create<ListItemOptions>({
         default: false,
         parseHTML: element => element.hasAttribute('data-loose'),
         renderHTML: attributes => (attributes.loose ? { 'data-loose': '' } : {}),
+      },
+      // How many spaces the file put before the nested blocks, like 4 under `- `
+      indent: {
+        default: null,
+        parseHTML: element =>
+          element.hasAttribute('data-indent') ? Number(element.getAttribute('data-indent')) : null,
+        renderHTML: attributes =>
+          attributes.indent ? { 'data-indent': String(attributes.indent) } : {},
       },
     }
   },
@@ -172,16 +181,21 @@ export const ListItem = Node.create<ListItemOptions>({
 
     // Marked adds a space token for a blank line between the item's blocks
     const loose = token.tokens?.some(child => child.type === 'space')
+    // A paragraph keeps its own extra spaces, so only a nested list takes the indent
+    const indent = /List$/.test(content[1]?.type ?? '')
+      ? nestedIndentFromRaw(token.raw ?? '')
+      : null
+    const attrs = { ...(loose ? { loose: true } : {}), ...(indent ? { indent } : {}) }
 
     return {
       type: 'listItem',
-      ...(loose ? { attrs: { loose: true } } : {}),
+      ...(Object.keys(attrs).length > 0 ? { attrs } : {}),
       content,
     }
   },
 
   renderMarkdown: (node, h, ctx) => {
-    return renderNestedMarkdownContent(
+    const markdown = renderNestedMarkdownContent(
       node,
       h,
       (context: any) => {
@@ -191,7 +205,7 @@ export const ListItem = Node.create<ListItemOptions>({
         if (context.parentType === 'orderedList') {
           const start = context.meta?.parentAttrs?.start || 1
           const type = context.meta?.parentAttrs?.type as string | undefined
-          const index = start - 1 + (context.index || 0)
+          const index = start - 1 + (context.meta?.parentAttrs?.sameNumber ? 0 : context.index || 0)
           return getListMarker(type, index, `${context.meta?.parentAttrs?.delimiter ?? '.'} `)
         }
         // Fallback to bullet list for unknown parent types
@@ -201,8 +215,12 @@ export const ListItem = Node.create<ListItemOptions>({
       {
         alignNestedToPrefix: ctx?.parentType === 'orderedList',
         blankLineBeforeBlocks: node.attrs?.loose === true,
+        indentWidth: node.attrs?.indent,
       },
     )
+
+    // An empty item is just its marker, with no space after it
+    return markdown.replace(/^(\S+) (?=\n|$)/, '$1')
   },
 
   addExtensions() {

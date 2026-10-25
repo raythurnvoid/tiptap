@@ -192,9 +192,9 @@ export const TaskItem = Node.create<TaskItemOptions>({
     )
   },
 
-  renderMarkdown: (node, h) => {
+  renderMarkdown: (node, h, ctx) => {
     const checkedChar = node.attrs?.checked ? 'x' : ' '
-    const prefix = `- [${checkedChar}] `
+    const prefix = `${ctx?.meta?.parentAttrs?.bullet ?? '-'} [${checkedChar}] `
 
     return renderNestedMarkdownContent(node, h, prefix, undefined, {
       blankLineBeforeBlocks: node.attrs?.loose === true,

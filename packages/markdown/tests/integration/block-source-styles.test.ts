@@ -43,6 +43,9 @@ describe('Code block and heading styles', () => {
     ['a heading under an empty list item', '-\n  # a'],
     ['text under a number', '1.\n   a\n   b'],
     ['a list that starts at 0', '0. a\n1. b'],
+    ['3 spaces after each bullet', '-   a\n    -   b\n-\n-   c'],
+    ['2 spaces after each number', '1.  a\n2.  b'],
+    ['a paragraph under a wide bullet', '-   a\n\n    more'],
     ['no space after a quote marker', '>a\n>\n>    code'],
     ['no space before a nested quote', '> a\n>\n>> b'],
   ])('keeps %s', (_name, markdown) => {
@@ -51,6 +54,10 @@ describe('Code block and heading styles', () => {
 
   it('writes a space after each quote marker when the file mixed both', () => {
     expect(markdownManager.serialize(markdownManager.parse('> a\n>b'))).toBe('> a\n> b')
+  })
+
+  it('writes one space after each marker when the items do not agree', () => {
+    expect(markdownManager.serialize(markdownManager.parse('9.  a\n10. b'))).toBe('9. a\n10. b')
   })
 
   it('writes the default opening marks once the level changes', () => {

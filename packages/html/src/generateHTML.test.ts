@@ -157,7 +157,7 @@ describe('generateHTML', () => {
         },
         {
           type: 'bulletList',
-          attrs: { bullet: null, loose: false },
+          attrs: { bullet: null, loose: false, markerSpace: null },
           content: [
             {
               type: 'listItem',

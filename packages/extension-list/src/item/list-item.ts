@@ -224,35 +224,46 @@ export const ListItem = Node.create<ListItemOptions>({
       firstChild?.type === 'paragraph' &&
       !firstChild.content?.length &&
       otherChildren.length > 0
+    const textBelowMarker = node.attrs?.textBelowMarker === true && !!firstChild?.content?.length
+    // 5 or more spaces after the marker would start an indented code block. Text under the marker
+    // starts one column past it, so it keeps the default indent.
+    const markerSpace =
+      !textBelowMarker && [2, 3, 4].includes(ctx?.meta?.parentAttrs?.markerSpace)
+        ? ' '.repeat(ctx.meta.parentAttrs.markerSpace)
+        : ' '
     const markdown = renderNestedMarkdownContent(
       blockOnMarker ? { ...node, content: otherChildren } : node,
       h,
       (context: any) => {
         if (context.parentType === 'bulletList') {
-          return `${context.meta?.parentAttrs?.bullet ?? '-'} `
+          return `${context.meta?.parentAttrs?.bullet ?? '-'}${markerSpace}`
         }
         if (context.parentType === 'orderedList') {
           const start = context.meta?.parentAttrs?.start ?? 1
           const type = context.meta?.parentAttrs?.type as string | undefined
           const index = start - 1 + (context.meta?.parentAttrs?.sameNumber ? 0 : context.index || 0)
-          return getListMarker(type, index, `${context.meta?.parentAttrs?.delimiter ?? '.'} `)
+          return getListMarker(
+            type,
+            index,
+            `${context.meta?.parentAttrs?.delimiter ?? '.'}${markerSpace}`,
+          )
         }
         // Fallback to bullet list for unknown parent types
         return '- '
       },
       ctx,
       {
-        alignNestedToPrefix: ctx?.parentType === 'orderedList',
+        // Nested blocks start where the text starts, which is past the default indent after a wide space
+        alignNestedToPrefix: ctx?.parentType === 'orderedList' || markerSpace.length > 1,
         blankLineBeforeBlocks: node.attrs?.loose === true,
         indentWidth: node.attrs?.indent,
         indentMainContent: true,
-        mainContentBelowPrefix:
-          node.attrs?.textBelowMarker === true && !!firstChild?.content?.length,
+        mainContentBelowPrefix: textBelowMarker,
       },
     )
 
     // An empty item is just its marker, with no space after it
-    return markdown.replace(/^(\S+) (?=\n|$)/, '$1')
+    return markdown.replace(/^(\S+) +(?=\n|$)/, '$1')
   },
 
   addExtensions() {

@@ -654,6 +654,7 @@ describe('TaskItem', () => {
             delimiter: null,
             loose: false,
             sameNumber: false,
+            markerSpace: null,
           },
           content: [
             {
@@ -1073,7 +1074,7 @@ describe('TaskItem', () => {
       content: [
         {
           type: 'bulletList',
-          attrs: { bullet: null, loose: false },
+          attrs: { bullet: null, loose: false, markerSpace: null },
           content: [
             {
               type: 'listItem',

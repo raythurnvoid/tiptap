@@ -3,6 +3,7 @@ import { Plugin } from '@tiptap/pm/state'
 
 import { mergeAttributes, Node, wrappingInputRule } from '@tiptap/core'
 
+import { markerSpaceFromItems } from '../helpers/markerSpaceFromItems.js'
 import { collectOrderedListItemsFromSource } from './collectOrderedListItemsFromSource.js'
 import { buildNestedStructure, parseListItems, parsePlainTextOrderedListPaste } from './utils.js'
 
@@ -170,6 +171,13 @@ export const OrderedList = Node.create<OrderedListOptions>({
         parseHTML: element => element.hasAttribute('data-same-number'),
         renderHTML: attributes => (attributes.sameNumber ? { 'data-same-number': '' } : {}),
       },
+      // How many spaces the Markdown file put after each marker, like 2 in `1.  a`
+      markerSpace: {
+        default: null,
+        parseHTML: element => Number(element.getAttribute('data-marker-space')) || null,
+        renderHTML: attributes =>
+          attributes.markerSpace ? { 'data-marker-space': String(attributes.markerSpace) } : {},
+      },
     }
   },
 
@@ -226,6 +234,11 @@ export const OrderedList = Node.create<OrderedListOptions>({
     const numbers = (token.items ?? []).map(item => /^\s*(\d+)/.exec(item.raw ?? '')?.[1])
     if (numbers.length > 1 && numbers.every(number => Number(number) === startValue)) {
       attrs.sameNumber = true
+    }
+
+    const markerSpace = markerSpaceFromItems(token.items ?? [])
+    if (markerSpace) {
+      attrs.markerSpace = markerSpace
     }
 
     if (Object.keys(attrs).length > 0) {

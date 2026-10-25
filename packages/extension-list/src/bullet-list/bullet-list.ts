@@ -1,6 +1,7 @@
 import { mergeAttributes, Node, wrappingInputRule } from '@tiptap/core'
 
 import { bulletFromMarker } from '../helpers/bulletFromMarker.js'
+import { markerSpaceFromItems } from '../helpers/markerSpaceFromItems.js'
 
 const ListItemName = 'listItem'
 const TextStyleName = 'textStyle'
@@ -89,6 +90,13 @@ export const BulletList = Node.create<BulletListOptions>({
         parseHTML: element => element.hasAttribute('data-loose'),
         renderHTML: attributes => (attributes.loose ? { 'data-loose': '' } : {}),
       },
+      // How many spaces the Markdown file put after each marker, like 3 in `-   a`
+      markerSpace: {
+        default: null,
+        parseHTML: element => Number(element.getAttribute('data-marker-space')) || null,
+        renderHTML: attributes =>
+          attributes.markerSpace ? { 'data-marker-space': String(attributes.markerSpace) } : {},
+      },
     }
   },
 
@@ -108,10 +116,15 @@ export const BulletList = Node.create<BulletListOptions>({
     }
 
     const bullet = bulletFromMarker(token.raw?.trimStart().charAt(0) ?? '')
+    const markerSpace = markerSpaceFromItems(token.items ?? [])
+    const attrs = {
+      ...(bullet ? { bullet } : {}),
+      ...(markerSpace ? { markerSpace } : {}),
+    }
 
     return {
       type: 'bulletList',
-      ...(bullet ? { attrs: { bullet } } : {}),
+      ...(Object.keys(attrs).length > 0 ? { attrs } : {}),
       content: token.items ? helpers.parseChildren(token.items) : [],
     }
   },

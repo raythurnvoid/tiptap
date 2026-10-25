@@ -84,6 +84,8 @@ export function renderNestedMarkdownContent(
   options?: {
     /** See the `@param` note above. */
     alignNestedToPrefix?: boolean
+    /** Put a blank line before each nested block but a list, like the file did. */
+    blankLineBeforeBlocks?: boolean
   },
 ): string {
   if (!node || !Array.isArray(node.content)) {
@@ -122,12 +124,18 @@ export function renderNestedMarkdownContent(
           )
         }
 
+        // Leave empty lines empty, so a blank line in a code block gets no trailing spaces
         const indentedChild = childContent
           .split('\n')
-          .map(line => (line ? indentLine(line) : indentLine('')))
+          .map(line => (line ? indentLine(line) : ''))
           .join('\n')
 
-        output += child.type === 'paragraph' ? `\n\n${indentedChild}` : `\n${indentedChild}`
+        const blankLine =
+          child.type === 'paragraph' ||
+          (options?.blankLineBeforeBlocks && !/List$/.test(child.type ?? '')) ||
+          // A line of only `-` right under the text above turns it into a heading
+          /^-+[ \t]*(?:\n|$)/.test(childContent)
+        output += blankLine ? `\n\n${indentedChild}` : `\n${indentedChild}`
       }
     })
   }

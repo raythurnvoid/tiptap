@@ -73,6 +73,17 @@ export const ListItem = Node.create<ListItemOptions>({
 
   defining: true,
 
+  addAttributes() {
+    return {
+      // The Markdown file puts blank lines between the blocks inside this item
+      loose: {
+        default: false,
+        parseHTML: element => element.hasAttribute('data-loose'),
+        renderHTML: attributes => (attributes.loose ? { 'data-loose': '' } : {}),
+      },
+    }
+  },
+
   parseHTML() {
     return [
       {
@@ -159,8 +170,12 @@ export const ListItem = Node.create<ListItemOptions>({
       ]
     }
 
+    // Marked adds a space token for a blank line between the item's blocks
+    const loose = token.tokens?.some(child => child.type === 'space')
+
     return {
       type: 'listItem',
+      ...(loose ? { attrs: { loose: true } } : {}),
       content,
     }
   },
@@ -183,7 +198,10 @@ export const ListItem = Node.create<ListItemOptions>({
         return '- '
       },
       ctx,
-      { alignNestedToPrefix: ctx?.parentType === 'orderedList' },
+      {
+        alignNestedToPrefix: ctx?.parentType === 'orderedList',
+        blankLineBeforeBlocks: node.attrs?.loose === true,
+      },
     )
   },
 

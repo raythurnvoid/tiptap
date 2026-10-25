@@ -331,7 +331,9 @@ describe('Ordered list lazy continuation parsing', () => {
         type: 'doc',
         content: [
           listWithSingleItem('one'),
-          { type: 'horizontalRule' },
+          thematicBreak === '---'
+            ? { type: 'horizontalRule' }
+            : { type: 'horizontalRule', attrs: { markdownSource: thematicBreak } },
           { type: 'paragraph', content: [{ type: 'text', text: 'Outside paragraph' }] },
         ],
       })
@@ -428,7 +430,7 @@ describe('Ordered list lazy continuation parsing', () => {
               type: 'listItem',
               content: [
                 { type: 'paragraph', content: [{ type: 'text', text: 'one' }] },
-                { type: 'horizontalRule' },
+                { type: 'horizontalRule', attrs: { markdownSource: '***' } },
               ],
             },
           ],

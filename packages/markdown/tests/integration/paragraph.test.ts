@@ -257,7 +257,7 @@ describe('Paragraph Markdown Rendering', () => {
       const parsed = markdownManager.parse(markdown)
       const listItem = parsed.content![0].content![0]
 
-      expect(markdown).toBe('- First\n\n  \n\n  &nbsp;\n\n  Second')
+      expect(markdown).toBe('- First\n\n\n\n  &nbsp;\n\n  Second')
       expect(listItem.type).toBe('listItem')
       expect(listItem.content).toHaveLength(4)
       expect(listItem.content![1].content).toEqual([])

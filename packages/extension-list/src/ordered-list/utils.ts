@@ -301,6 +301,10 @@ export function buildNestedStructure(
       }
 
       const additionalContent = blockLines.join('\n').trim()
+      // Keep the blank line before the blocks, like Marked does for a bullet item
+      if (mainText && additionalContent && blockLines[0].trim() === '') {
+        tokens.push({ type: 'space', raw: '\n' })
+      }
       if (additionalContent) {
         const blockTokens = lexer.blockTokens(additionalContent)
         tokens.push(...blockTokens)
@@ -400,8 +404,12 @@ export function parseListItems(
       })
     }
 
+    // Same rule as `ListItem.parseMarkdown`
+    const loose = item.tokens?.some(child => child.type === 'space')
+
     return {
       type: 'listItem',
+      ...(loose ? { attrs: { loose: true } } : {}),
       content,
     }
   })

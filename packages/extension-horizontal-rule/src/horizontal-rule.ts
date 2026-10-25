@@ -28,6 +28,9 @@ declare module '@tiptap/core' {
   }
 }
 
+// Three or more of the same `-`, `*` or `_`, with spaces between them allowed
+const THEMATIC_BREAK_REGEX = /^([-*_])(?:[ \t]*\1){2,}$/
+
 /**
  * This extension allows you to insert horizontal rules.
  * @see https://www.tiptap.dev/api/nodes/horizontal-rule
@@ -44,6 +47,18 @@ export const HorizontalRule = Node.create<HorizontalRuleOptions>({
 
   group: 'block',
 
+  addAttributes() {
+    return {
+      // How the Markdown file wrote this rule, like `***` or `- - -`. Empty means `---`.
+      markdownSource: {
+        default: null,
+        parseHTML: element => element.getAttribute('data-markdown-source'),
+        renderHTML: attributes =>
+          attributes.markdownSource ? { 'data-markdown-source': attributes.markdownSource } : {},
+      },
+    }
+  },
+
   parseHTML() {
     return [{ tag: 'hr' }]
   },
@@ -55,11 +70,16 @@ export const HorizontalRule = Node.create<HorizontalRuleOptions>({
   markdownTokenName: 'hr',
 
   parseMarkdown: (token, helpers) => {
-    return helpers.createNode('horizontalRule')
+    const source = token.raw?.trim()
+    return helpers.createNode(
+      'horizontalRule',
+      source && source !== '---' ? { markdownSource: source } : {},
+    )
   },
 
-  renderMarkdown: () => {
-    return '---'
+  renderMarkdown: node => {
+    const source = node.attrs?.markdownSource
+    return typeof source === 'string' && THEMATIC_BREAK_REGEX.test(source) ? source : '---'
   },
 
   addCommands() {

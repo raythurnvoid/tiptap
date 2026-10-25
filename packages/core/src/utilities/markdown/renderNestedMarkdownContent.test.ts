@@ -48,4 +48,30 @@ describe('renderNestedMarkdownContent', () => {
 
     expect(out).toBe('\t- parent\n\n      child')
   })
+
+  describe('blank lines before nested blocks', () => {
+    const blocks = {
+      type: 'listItem',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'parent' }] },
+        { type: 'codeBlock', content: [{ type: 'text', text: '```' }] },
+        { type: 'horizontalRule', content: [{ type: 'text', text: '---' }] },
+        { type: 'bulletList', content: [{ type: 'text', text: '- child' }] },
+      ],
+    }
+
+    it('keeps blocks tight, but never puts `---` right under a line', () => {
+      expect(renderNestedMarkdownContent(blocks, helpers('  '), '- ')).toBe(
+        '- parent\n  ```\n\n  ---\n  - child',
+      )
+    })
+
+    it('puts a blank line before each block but a list when asked', () => {
+      const out = renderNestedMarkdownContent(blocks, helpers('  '), '- ', undefined, {
+        blankLineBeforeBlocks: true,
+      })
+
+      expect(out).toBe('- parent\n\n  ```\n\n  ---\n  - child')
+    })
+  })
 })

@@ -657,6 +657,7 @@ describe('TaskItem', () => {
           content: [
             {
               type: 'listItem',
+              attrs: { loose: false },
               content: [
                 {
                   type: 'paragraph',
@@ -1074,6 +1075,7 @@ describe('TaskItem', () => {
           content: [
             {
               type: 'listItem',
+              attrs: { loose: false },
               content: [
                 {
                   type: 'paragraph',

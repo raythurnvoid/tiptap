@@ -120,6 +120,14 @@ export const TaskItem = Node.create<TaskItemOptions>({
           'data-checked': attributes.checked,
         }),
       },
+      // The file wrote `[X]` for a checked item
+      checkedMark: {
+        default: null,
+        keepOnSplit: false,
+        parseHTML: element => (element.getAttribute('data-checked-mark') === 'X' ? 'X' : null),
+        renderHTML: attributes =>
+          attributes.checkedMark ? { 'data-checked-mark': attributes.checkedMark } : {},
+      },
       // The Markdown file puts blank lines between the blocks inside this item
       loose: {
         default: false,
@@ -187,13 +195,17 @@ export const TaskItem = Node.create<TaskItemOptions>({
 
     return h.createNode(
       'taskItem',
-      { checked: token.checked || false, ...(loose ? { loose: true } : {}) },
+      {
+        checked: token.checked || false,
+        ...(loose ? { loose: true } : {}),
+        ...(token.checkedMark === 'X' ? { checkedMark: 'X' } : {}),
+      },
       content,
     )
   },
 
   renderMarkdown: (node, h, ctx) => {
-    const checkedChar = node.attrs?.checked ? 'x' : ' '
+    const checkedChar = node.attrs?.checked ? (node.attrs.checkedMark === 'X' ? 'X' : 'x') : ' '
     const prefix = `${ctx?.meta?.parentAttrs?.bullet ?? '-'} [${checkedChar}] `
 
     return renderNestedMarkdownContent(node, h, prefix, undefined, {

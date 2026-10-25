@@ -114,6 +114,7 @@ export const TaskList = Node.create<TaskListOptions>({
               indentLevel: match[1].length,
               mainContent: match[4],
               checked: match[3].toLowerCase() === 'x',
+              checkedMark: match[3],
             }),
             createToken: (data, nestedTokens) => ({
               type: 'taskItem',
@@ -121,6 +122,7 @@ export const TaskList = Node.create<TaskListOptions>({
               mainContent: data.mainContent,
               indentLevel: data.indentLevel,
               checked: data.checked,
+              checkedMark: data.checkedMark,
               text: data.mainContent,
               tokens: lexer.inlineTokens(data.mainContent),
               nestedTokens,
@@ -162,6 +164,7 @@ export const TaskList = Node.create<TaskListOptions>({
             indentLevel: match[1].length,
             mainContent: match[4],
             checked: match[3].toLowerCase() === 'x',
+            checkedMark: match[3],
           }),
           createToken: (data, nestedTokens) => ({
             type: 'taskItem',
@@ -169,6 +172,7 @@ export const TaskList = Node.create<TaskListOptions>({
             mainContent: data.mainContent,
             indentLevel: data.indentLevel,
             checked: data.checked,
+            checkedMark: data.checkedMark,
             text: data.mainContent,
             tokens: lexer.inlineTokens(data.mainContent),
             nestedTokens,

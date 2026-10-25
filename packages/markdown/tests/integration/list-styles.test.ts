@@ -24,6 +24,7 @@ describe('List styles', () => {
     ['the same number on every item', '1. a\n1. b'],
     ['a `*` task bullet', '* [ ] a\n* [x] b'],
     ['a `+` task bullet', '+ [ ] a'],
+    ['an upper-case `[X]`', '- [X] a\n- [x] b\n  - [X] c'],
     ['an empty bullet item', '- a\n-\n- c'],
     ['an empty ordered item', '1. a\n2.\n3. c'],
     ['a list nested with 4 spaces', '- a\n    - b\n        - c'],

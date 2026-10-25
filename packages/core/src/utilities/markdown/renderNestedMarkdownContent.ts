@@ -90,6 +90,8 @@ export function renderNestedMarkdownContent(
     indentWidth?: number | null
     /** Indent the main content's later lines too, like the wrapped lines of a list item's text. */
     indentMainContent?: boolean
+    /** Start the main content on the line under the prefix, like the file did. */
+    mainContentBelowPrefix?: boolean
   },
 ): string {
   if (!node || !Array.isArray(node.content)) {
@@ -131,12 +133,15 @@ export function renderNestedMarkdownContent(
   // start, because the reader counts their own spaces from there. The kept indent of a nested
   // list does not apply to them.
   const mainContent = h.renderChildren([content])
-  let output = options?.indentMainContent
-    ? `${prefix}${mainContent
-        .split('\n')
-        .map((line, index) => (index > 0 && line ? indentLine(line, 0) : line))
-        .join('\n')}`
-    : `${prefix}${mainContent}`
+  const mainLines = mainContent.split('\n')
+  let output = `${prefix}${mainContent}`
+  if (options?.mainContentBelowPrefix) {
+    output = `${prefix.trimEnd()}\n${mainLines.map(line => (line ? indentLine(line, 0) : line)).join('\n')}`
+  } else if (options?.indentMainContent) {
+    output = `${prefix}${mainLines
+      .map((line, index) => (index > 0 && line ? indentLine(line, 0) : line))
+      .join('\n')}`
+  }
 
   // Handle nested children with proper indentation
   if (children && children.length > 0) {

@@ -39,6 +39,7 @@ describe('Code block and heading styles', () => {
     ['a fence that starts a list item', '- ```\n  code\n  ```'],
     ['a heading that starts a numbered item', '1. # a\n2. b'],
     ['a heading under an empty list item', '-\n  # a'],
+    ['text under a number', '1.\n   a\n   b'],
     ['no space after a quote marker', '>a\n>\n>    code'],
     ['no space before a nested quote', '> a\n>\n>> b'],
   ])('keeps %s', (_name, markdown) => {
@@ -155,5 +156,28 @@ describe('Code block and heading styles', () => {
     }
 
     expect(markdownManager.serialize(doc)).toBe('- a\n  # h')
+  })
+
+  it.each([
+    ['writes the text under the marker', [{ type: 'text', text: 'a\nb' }], '-\n  a\n  b'],
+    ['writes an item left with no text as its marker alone', [], '-'],
+  ])('%s', (_name, text, markdown) => {
+    const doc = {
+      type: 'doc',
+      content: [
+        {
+          type: 'bulletList',
+          content: [
+            {
+              type: 'listItem',
+              attrs: { textBelowMarker: true },
+              content: [{ type: 'paragraph', content: text }],
+            },
+          ],
+        },
+      ],
+    }
+
+    expect(markdownManager.serialize(doc)).toBe(markdown)
   })
 })

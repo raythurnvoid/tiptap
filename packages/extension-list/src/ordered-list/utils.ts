@@ -425,10 +425,12 @@ export function parseListItems(
     const indent = /List$/.test(itemContent[1]?.type ?? '')
       ? nestedIndentFromRaw(item.raw ?? '')
       : null
+    const textBelowMarker = /^ *\S+[ \t]*\n/.test(item.raw ?? '')
     const attrs = {
       ...(loose ? { loose: true } : {}),
       ...(indent ? { indent } : {}),
       ...(blockOnMarker ? { blockOnMarker } : {}),
+      ...(textBelowMarker ? { textBelowMarker } : {}),
     }
 
     return {

@@ -97,6 +97,13 @@ export const ListItem = Node.create<ListItemOptions>({
         parseHTML: element => element.hasAttribute('data-block-on-marker'),
         renderHTML: attributes => (attributes.blockOnMarker ? { 'data-block-on-marker': '' } : {}),
       },
+      // The file put the item's text on the line under the marker, like `-` then `  a`
+      textBelowMarker: {
+        default: false,
+        parseHTML: element => element.hasAttribute('data-text-below-marker'),
+        renderHTML: attributes =>
+          attributes.textBelowMarker ? { 'data-text-below-marker': '' } : {},
+      },
     }
   },
 
@@ -239,6 +246,8 @@ export const ListItem = Node.create<ListItemOptions>({
         blankLineBeforeBlocks: node.attrs?.loose === true,
         indentWidth: node.attrs?.indent,
         indentMainContent: true,
+        mainContentBelowPrefix:
+          node.attrs?.textBelowMarker === true && !!firstChild?.content?.length,
       },
     )
 

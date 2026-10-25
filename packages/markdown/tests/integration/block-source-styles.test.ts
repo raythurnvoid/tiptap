@@ -1,3 +1,4 @@
+import { Blockquote } from '@tiptap/extension-blockquote'
 import { CodeBlock } from '@tiptap/extension-code-block'
 import { Document } from '@tiptap/extension-document'
 import { Heading } from '@tiptap/extension-heading'
@@ -10,7 +11,17 @@ import { MarkdownManager } from '../../src/MarkdownManager.js'
 
 describe('Code block and heading styles', () => {
   const markdownManager = new MarkdownManager({
-    extensions: [Document, Paragraph, Text, CodeBlock, Heading, BulletList, OrderedList, ListItem],
+    extensions: [
+      Document,
+      Paragraph,
+      Text,
+      Blockquote,
+      CodeBlock,
+      Heading,
+      BulletList,
+      OrderedList,
+      ListItem,
+    ],
   })
 
   it.each([
@@ -28,8 +39,14 @@ describe('Code block and heading styles', () => {
     ['a fence that starts a list item', '- ```\n  code\n  ```'],
     ['a heading that starts a numbered item', '1. # a\n2. b'],
     ['a heading under an empty list item', '-\n  # a'],
+    ['no space after a quote marker', '>a\n>\n>    code'],
+    ['no space before a nested quote', '> a\n>\n>> b'],
   ])('keeps %s', (_name, markdown) => {
     expect(markdownManager.serialize(markdownManager.parse(markdown))).toBe(markdown)
+  })
+
+  it('writes a space after each quote marker when the file mixed both', () => {
+    expect(markdownManager.serialize(markdownManager.parse('> a\n>b'))).toBe('> a\n> b')
   })
 
   it('writes the default opening marks once the level changes', () => {

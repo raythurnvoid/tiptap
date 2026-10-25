@@ -225,6 +225,10 @@ describe('generateHTML', () => {
         },
         {
           type: 'blockquote',
+          attrs: {
+            markdownTextMarker: null,
+            markdownNestedMarker: null,
+          },
           content: [
             {
               type: 'paragraph',

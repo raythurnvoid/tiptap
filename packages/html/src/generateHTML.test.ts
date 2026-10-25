@@ -108,6 +108,7 @@ describe('generateHTML', () => {
           attrs: {
             level: 2,
             markdownClosing: null,
+            markdownOpening: null,
             markdownUnderline: null,
           },
           content: [

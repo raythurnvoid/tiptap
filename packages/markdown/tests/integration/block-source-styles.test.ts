@@ -20,6 +20,8 @@ describe('Code block and heading styles', () => {
     ['an indented block', 'a\n\n    code\n\n    more'],
     ['closing marks', '## a ##'],
     ['an empty heading', 'a\n\n##\n\nb'],
+    ['spaces after the opening marks', '#   a\n\n##\ta  ##'],
+    ['closing marks on an empty heading', '## ##'],
     ['an underline', 'a\n='],
     ['an underline over text that starts like a list', '\\- a\n---'],
     ['a heading that starts a list item', '- # a\n- b'],
@@ -28,6 +30,21 @@ describe('Code block and heading styles', () => {
     ['a heading under an empty list item', '-\n  # a'],
   ])('keeps %s', (_name, markdown) => {
     expect(markdownManager.serialize(markdownManager.parse(markdown))).toBe(markdown)
+  })
+
+  it('writes the default opening marks once the level changes', () => {
+    const doc = {
+      type: 'doc',
+      content: [
+        {
+          type: 'heading',
+          attrs: { level: 2, markdownOpening: '#   ' },
+          content: [{ type: 'text', text: 'a' }],
+        },
+      ],
+    }
+
+    expect(markdownManager.serialize(doc)).toBe('## a')
   })
 
   it('makes a `~~~` fence longer than a `~~~` line in the code', () => {

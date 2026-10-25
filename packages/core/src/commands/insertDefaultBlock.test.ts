@@ -142,12 +142,22 @@ describe('insertDefaultBlock', () => {
         content: [
           {
             type: 'heading',
-            attrs: { level: 2, markdownClosing: null, markdownUnderline: null },
+            attrs: {
+              level: 2,
+              markdownClosing: null,
+              markdownOpening: null,
+              markdownUnderline: null,
+            },
             content: [{ type: 'text', text: 'new' }],
           },
           {
             type: 'heading',
-            attrs: { level: 1, markdownClosing: null, markdownUnderline: null },
+            attrs: {
+              level: 1,
+              markdownClosing: null,
+              markdownOpening: null,
+              markdownUnderline: null,
+            },
             content: [{ type: 'text', text: 'existing' }],
           },
         ],
@@ -159,6 +169,7 @@ describe('insertDefaultBlock', () => {
       expect(editor.state.doc.firstChild?.attrs).toEqual({
         level: 3,
         markdownClosing: null,
+        markdownOpening: null,
         markdownUnderline: null,
       })
     })

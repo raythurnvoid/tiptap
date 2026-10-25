@@ -73,6 +73,13 @@ export const Heading = Node.create<HeadingOptions>({
         renderHTML: attributes =>
           attributes.markdownClosing ? { 'data-markdown-closing': attributes.markdownClosing } : {},
       },
+      // The opening marks the Markdown file wrote with the spaces after them, like `#   `
+      markdownOpening: {
+        default: null,
+        parseHTML: element => element.getAttribute('data-markdown-opening'),
+        renderHTML: attributes =>
+          attributes.markdownOpening ? { 'data-markdown-opening': attributes.markdownOpening } : {},
+      },
       // The underline the Markdown file wrote under the text, like `===`
       markdownUnderline: {
         default: null,
@@ -106,7 +113,8 @@ export const Heading = Node.create<HeadingOptions>({
     const underline =
       lines.length > 1 ? /^ {0,3}(=+|-+)[ \t]*$/.exec(lines.at(-1) ?? '')?.[1] : null
     const closing =
-      lines.length === 1 ? /^ {0,3}#{1,6}[ \t]+.*?([ \t]+#+)$/.exec(lines[0])?.[1] : null
+      lines.length === 1 ? /^ {0,3}#{1,6}(?:[ \t]+.*?)?([ \t]+#+)$/.exec(lines[0])?.[1] : null
+    const opening = lines.length === 1 ? /^ {0,3}(#{1,6}[ \t]+)/.exec(lines[0])?.[1] : null
 
     return helpers.createNode(
       'heading',
@@ -114,6 +122,9 @@ export const Heading = Node.create<HeadingOptions>({
         level: token.depth || 1,
         ...(underline ? { markdownUnderline: underline } : {}),
         ...(closing ? { markdownClosing: closing } : {}),
+        ...(opening && opening !== `${'#'.repeat(token.depth || 1)} `
+          ? { markdownOpening: opening }
+          : {}),
       },
       helpers.parseInline(token.tokens || []),
     )
@@ -143,7 +154,13 @@ export const Heading = Node.create<HeadingOptions>({
       return `${content}\n${keepsUnderline ? underline : level === 1 ? '===' : '---'}`
     }
 
-    return `${headingChars} ${escapeClosingHashes(content.replace(/\n/g, ' '))}${closing}`
+    // A changed level no longer matches the marks the file wrote
+    const opening = node.attrs?.markdownOpening ?? ''
+    const start =
+      /^#+[ \t]+$/.test(opening) && opening.trimEnd() === headingChars
+        ? opening
+        : `${headingChars} `
+    return `${start}${escapeClosingHashes(content.replace(/\n/g, ' '))}${closing}`
   },
 
   addCommands() {
